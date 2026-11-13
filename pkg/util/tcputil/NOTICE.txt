@@ -1,0 +1,7 @@
+Portions Copyright (c) Philip O'Toole 2015 - 2024.
+
+Legacy TCP client/service and protobuf-framing scaffolding is adapted from
+rqlite v8.36.5 (5bd095af56c904ea270315f3d0d9b182516db5f0), cluster/client.go
+and cluster/service.go. Upstream portions retain the MIT license supplied in
+licenses/MIT-rqlite.txt at the repository root. Djob job/command behavior is
+separately governed by the root engine LICENSE. See THIRD_PARTY_NOTICES.txt.

@@ -1,0 +1,11 @@
+djob Go SDK
+Copyright (c) 2026 Sebastian Kaiser
+
+This SDK is licensed under the Apache License, Version 2.0.
+It includes the job contracts, built-in handlers, worker client, protocol schemas
+and generated worker bindings under sdk/go/. It does not include engine code
+from other directories, even when a program imports both modules.
+
+Third-party dependencies retain their own copyrights and license terms.
+See go.mod and go.sum for pinned dependencies. Distributors of combined binaries
+must also preserve the notices required by the dependencies they include.

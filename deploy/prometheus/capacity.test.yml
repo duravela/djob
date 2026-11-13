@@ -1,0 +1,99 @@
+rule_files:
+  - capacity.yml
+evaluation_interval: 5m
+tests:
+  - name: Growing database and shrinking volume project finite capacity
+    interval: 5m
+    input_series:
+      - series: 'djob_store_file_bytes{job="djob",instance="growing"}'
+        values: '1000000+30000x84'
+      - series: 'djob_admission_max_database_bytes{job="djob",instance="growing"}'
+        values: '10000000+0x84'
+      - series: 'djob_admission_min_storage_available_bytes{job="djob",instance="growing"}'
+        values: '1000000+0x84'
+      - series: 'djob_storage_volume_available_bytes{job="djob",instance="growing",component="store"}'
+        values: '10000000-30000x84'
+      - series: 'djob_storage_probe_success{job="djob",instance="growing",component="store"}'
+        values: '1+0x84'
+      - series: 'djob_storage_sample_age_seconds{job="djob",instance="growing",component="store"}'
+        values: '1+0x84'
+    promql_expr_test:
+      - expr: djob:store_growth_bytes_per_second
+        eval_time: 6h
+        exp_samples:
+          - labels: '{__name__="djob:store_growth_bytes_per_second",job="djob",instance="growing"}'
+            value: 100
+      - expr: djob:store_seconds_to_limit
+        eval_time: 6h
+        exp_samples:
+          - labels: '{__name__="djob:store_seconds_to_limit",job="djob",instance="growing"}'
+            value: 68400
+      - expr: djob:volume_seconds_to_headroom
+        eval_time: 6h
+        exp_samples:
+          - labels: '{__name__="djob:volume_seconds_to_headroom",job="djob",instance="growing",component="store"}'
+            value: 68400
+    alert_rule_test:
+      - eval_time: 6h
+        alertname: DjobDatabaseCapacityWithinDay
+        exp_alerts:
+          - exp_labels: {job: djob, instance: growing, severity: critical}
+            exp_annotations:
+              summary: Database file growth projects admission capacity within one day
+              description: Provision headroom before admission stops. Forecasts are estimates and do not replace the existing storage-pressure alerts.
+  - name: Flat, unlimited and stale data never establish finite database runway
+    interval: 5m
+    input_series:
+      - series: 'djob_store_file_bytes{job="djob",instance="flat"}'
+        values: '1000+0x84'
+      - series: 'djob_store_file_bytes{job="djob",instance="unlimited"}'
+        values: '1000+100x84'
+      - series: 'djob_store_file_bytes{job="djob",instance="stale"}'
+        values: '1000+100x84'
+      - series: 'djob_admission_max_database_bytes{job="djob",instance="flat"}'
+        values: '10000+0x84'
+      - series: 'djob_admission_max_database_bytes{job="djob",instance="unlimited"}'
+        values: '0+0x84'
+      - series: 'djob_admission_max_database_bytes{job="djob",instance="stale"}'
+        values: '10000+0x84'
+      - series: 'djob_storage_probe_success{job="djob",instance="flat",component="store"}'
+        values: '1+0x84'
+      - series: 'djob_storage_probe_success{job="djob",instance="unlimited",component="store"}'
+        values: '1+0x84'
+      - series: 'djob_storage_probe_success{job="djob",instance="stale",component="store"}'
+        values: '1+0x84'
+      - series: 'djob_storage_sample_age_seconds{job="djob",instance="flat",component="store"}'
+        values: '1+0x84'
+      - series: 'djob_storage_sample_age_seconds{job="djob",instance="unlimited",component="store"}'
+        values: '1+0x84'
+      - series: 'djob_storage_sample_age_seconds{job="djob",instance="stale",component="store"}'
+        values: '60+0x84'
+    promql_expr_test:
+      - expr: djob:store_seconds_to_limit
+        eval_time: 6h
+        exp_samples: []
+  - name: Freshness checks preserve cluster labels when private instance addresses overlap
+    interval: 5m
+    input_series:
+      - series: 'djob_store_file_bytes{job="djob",instance="member-1",cluster="fresh"}'
+        values: '1000000+30000x84'
+      - series: 'djob_store_file_bytes{job="djob",instance="member-1",cluster="stale"}'
+        values: '1000000+30000x84'
+      - series: 'djob_admission_max_database_bytes{job="djob",instance="member-1",cluster="fresh"}'
+        values: '10000000+0x84'
+      - series: 'djob_admission_max_database_bytes{job="djob",instance="member-1",cluster="stale"}'
+        values: '10000000+0x84'
+      - series: 'djob_storage_probe_success{job="djob",instance="member-1",cluster="fresh",component="store"}'
+        values: '1+0x84'
+      - series: 'djob_storage_probe_success{job="djob",instance="member-1",cluster="stale",component="store"}'
+        values: '1+0x84'
+      - series: 'djob_storage_sample_age_seconds{job="djob",instance="member-1",cluster="fresh",component="store"}'
+        values: '1+0x84'
+      - series: 'djob_storage_sample_age_seconds{job="djob",instance="member-1",cluster="stale",component="store"}'
+        values: '60+0x84'
+    promql_expr_test:
+      - expr: djob:store_seconds_to_limit
+        eval_time: 6h
+        exp_samples:
+          - labels: '{__name__="djob:store_seconds_to_limit",job="djob",instance="member-1",cluster="fresh"}'
+            value: 68400

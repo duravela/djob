@@ -1,0 +1,100 @@
+# Replace the image, public origin and controller origins before applying.
+# Provision djob-console-tls (tls.crt/tls.key) and djob-controller-ca (ca.crt).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: djob-console
+spec:
+  replicas: 2
+  minReadySeconds: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels: {app: djob-console}
+  template:
+    metadata:
+      labels: {app: djob-console}
+    spec:
+      terminationGracePeriodSeconds: 45
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        fsGroup: 65532
+        seccompProfile: {type: RuntimeDefault}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels: {app: djob-console}
+                topologyKey: kubernetes.io/hostname
+      containers:
+        - name: console
+          image: YOUR_REGISTRY/djob-console:YOUR_VERSION
+          command: [/djob-console]
+          args:
+            - --shared-sessions
+            - --controllers=https://controller-1.example.com:8080,https://controller-2.example.com:8080,https://controller-3.example.com:8080
+            - --controller-tls-ca=/controller-trust/ca.crt
+            - --listen=0.0.0.0:8090
+            - --public-url=https://jobs.example.com
+            - --tls-cert=/browser-tls/tls.crt
+            - --tls-key=/browser-tls/tls.key
+            - --drain-delay=5s
+            - --shutdown-timeout=30s
+          ports: [{name: https, containerPort: 8090}]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: '1', memory: 256Mi}
+          readinessProbe:
+            httpGet:
+              scheme: HTTPS
+              path: /readyz
+              port: https
+              httpHeaders: [{name: Host, value: jobs.example.com}]
+            periodSeconds: 1
+            timeoutSeconds: 1
+            failureThreshold: 1
+          livenessProbe:
+            httpGet:
+              scheme: HTTPS
+              path: /healthz
+              port: https
+              httpHeaders: [{name: Host, value: jobs.example.com}]
+            periodSeconds: 10
+          volumeMounts:
+            - {name: browser-tls, mountPath: /browser-tls, readOnly: true}
+            - {name: controller-trust, mountPath: /controller-trust, readOnly: true}
+      volumes:
+        - name: browser-tls
+          secret: {secretName: djob-console-tls, defaultMode: 288}
+        - name: controller-trust
+          secret: {secretName: djob-controller-ca, defaultMode: 288}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: djob-console
+spec:
+  type: LoadBalancer
+  sessionAffinity: None
+  selector: {app: djob-console}
+  ports: [{name: https, port: 443, targetPort: https}]
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: djob-console
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: {app: djob-console}

@@ -1,0 +1,252 @@
+// Copyright (c) 2026 Sebastian Kaiser
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+package djob.workers.v2;
+option go_package = "github.com/duravela/djob/sdk/go/worker/protocol/v2;workerpb";
+import "google/protobuf/timestamp.proto";
+
+// A connection owns one fresh session. Reconnection never resumes a session.
+// Poll and heartbeat responses retain their request IDs so the worker measures
+// execution permission from before sending the corresponding request.
+service Workers {
+  rpc Connect(stream ClientFrame) returns (stream ServerFrame);
+}
+message ClientFrame {
+  uint64 request_id = 1;
+  oneof payload {
+    Register register = 2;
+    Poll poll = 3;
+    Heartbeat heartbeat = 4;
+    Result result = 5;
+    Drain drain = 6;
+    Disconnect disconnect = 7;
+  }
+}
+message ServerFrame {
+  uint64 request_id = 1;
+  oneof payload {
+    Registered registered = 2;
+    Command command = 3;
+    HeartbeatReply heartbeat = 4;
+    // Acknowledges receipt, not durable job completion.
+    Acknowledgement acknowledgement = 5;
+    Idle idle = 6;
+  }
+}
+message Poll {}
+message Drain {}
+message Disconnect {}
+message Acknowledgement {}
+message Idle {}
+
+message Version {
+  string name = 1;
+  string version = 2;
+}
+
+message JobGroup {
+  string tenant_id = 1;
+  string id = 2;
+  uint64 revision = 3;
+  string runtime = 4;
+  repeated string resources = 5;
+  uint64 max_running = 6;
+}
+
+message JobDefinition {
+  string tenant_id = 1;
+  string id = 2;
+  uint64 revision = 3;
+  string group_id = 4;
+  string runtime = 5;
+  string handler = 6;
+  string handler_version = 7;
+  bytes input = 8;
+  string binding_id = 9;
+  repeated string resources = 10;
+  string worker_release = 11;
+  map<string, uint32> worker_release_weights = 12;
+}
+
+message JobBinding {
+  string tenant_id = 1;
+  string id = 2;
+  uint64 revision = 3;
+  string driver = 4;
+  string driver_version = 5;
+  bytes config = 6;
+  repeated string resources = 7;
+}
+
+message JobAction {
+  string tenant_id = 1;
+  string run_id = 2;
+  uint64 sequence = 3;
+  string attempt_id = 4;
+  string operation = 5;
+  bytes input = 6;
+  string status = 7;
+  bytes result = 8;
+  string error = 9;
+  google.protobuf.Timestamp authorized_at = 10;
+  google.protobuf.Timestamp finished_at = 11;
+}
+
+message JobRun {
+  JobActivation activation = 1;
+  string trigger_id = 2;
+  uint64 trigger_revision = 3;
+  google.protobuf.Timestamp scheduled_at = 4;
+  string tenant_id = 5;
+  string id = 6;
+  JobDefinition definition = 7;
+  JobGroup group = 8;
+  JobBinding binding = 9;
+  string runtime = 10;
+  repeated string resources = 11;
+  string status = 12;
+  uint64 step = 13;
+  bytes state = 14;
+  bytes result = 15;
+  string error = 16;
+  uint64 action_count = 17;
+  JobAction pending_action = 18;
+  string wait_key = 19;
+  google.protobuf.Timestamp wake_at = 20;
+  string owner_id = 21;
+  string attempt_id = 22;
+  string last_attempt_id = 23;
+  uint64 attempt_count = 24;
+  google.protobuf.Timestamp lease_until = 25;
+  bool cancel_requested = 26;
+  google.protobuf.Timestamp cancel_requested_at = 27;
+  string cancel_reason = 28;
+  google.protobuf.Timestamp created_at = 29;
+  google.protobuf.Timestamp last_transition = 30;
+}
+
+message JobEvent {
+  string tenant_id = 1;
+  string run_id = 2;
+  string id = 3;
+  string key = 4;
+  bytes data = 5;
+  google.protobuf.Timestamp at = 6;
+  google.protobuf.Timestamp consumed_at = 7;
+}
+
+message JobActivation {
+  string tenant_id = 1;
+  string trigger_id = 2;
+  string source = 3;
+  string event_id = 4;
+  string run_id = 5;
+  uint64 trigger_revision = 6;
+  google.protobuf.Timestamp occurred_at = 7;
+  google.protobuf.Timestamp accepted_at = 8;
+  bytes data = 9;
+  bool data_deleted = 10;
+  bytes data_sha256 = 11;
+}
+
+message View {
+  JobRun run = 1;
+  JobEvent event = 2;
+  google.protobuf.Timestamp now = 3;
+}
+
+message Decision {
+  string kind = 1;
+  bytes state = 2;
+  string operation = 3;
+  bytes input = 4;
+  string wait_key = 5;
+  google.protobuf.Timestamp wake_at = 6;
+  int64 wait_for_ns = 7;
+  string status = 8;
+  bytes result = 9;
+  string error = 10;
+}
+
+message Action {
+  string tenant_id = 1;
+  string run_id = 2;
+  string attempt_id = 3;
+  uint64 sequence = 4;
+  string operation = 5;
+  bytes input = 6;
+  string idempotency_key = 7;
+}
+
+message Effect {
+  string status = 1;
+  bytes data = 2;
+  string error = 3;
+  bool session_lost = 4;
+}
+
+message Register {
+  string deployment_id = 6;
+  uint64 deployment_generation = 7;
+  int32 protocol = 1;
+  string worker_id = 2;
+  string tenant_id = 3;
+  repeated Version handlers = 4;
+  repeated Version drivers = 5;
+}
+
+message Registered {
+  string deployment_id = 5;
+  uint64 deployment_generation = 6;
+  int32 protocol = 1;
+  string session_id = 2;
+  string tenant_id = 3;
+  int64 heartbeat_every_ns = 4;
+}
+
+message Command {
+  string id = 1;
+  uint64 sequence = 2;
+  string kind = 3;
+  int64 budget_ns = 4;
+  int64 timeout_ns = 5;
+  View view = 6;
+  JobRun run = 7;
+  Action action = 8;
+  repeated Gateway gateways = 9;
+}
+
+message Gateway {
+  string resource_id = 1;
+  uint64 resource_revision = 2;
+  uint64 resource_epoch = 3;
+  string duplex = 4;
+  uint32 capacity = 5;
+  string channel_id = 6;
+  string gateway_id = 7;
+  string protocol = 8;
+  string endpoint = 9;
+  uint64 revision = 10;
+  uint64 epoch = 11;
+  string owner_id = 12;
+  google.protobuf.Timestamp lease_until = 13;
+  google.protobuf.Timestamp last_transition = 14;
+}
+
+message Result {
+  string id = 1;
+  Decision decision = 2;
+  Effect effect = 3;
+  string error = 4;
+}
+
+message Heartbeat {
+  string command_id = 1;
+}
+
+message HeartbeatReply {
+  string command_id = 1;
+  bool cancel = 2;
+  int64 budget_ns = 3;
+}

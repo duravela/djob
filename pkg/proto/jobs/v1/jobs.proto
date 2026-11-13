@@ -1,0 +1,240 @@
+syntax = "proto3";
+package djob.jobs.v1;
+option go_package = "github.com/duravela/djob/pkg/proto/jobs/v1;jobspb";
+import "google/protobuf/timestamp.proto";
+
+// Generic jobs have a separate credential and tenant boundary from the legacy
+// Scheduler service. Claims, leases and I/O authorizations are internal only.
+service Jobs {
+  rpc Mutate(MutationRequest) returns (MutationResponse);
+  rpc Get(GetRequest) returns (Record);
+  rpc List(ListRequest) returns (ListResponse);
+}
+
+message Command { string request_id = 1; google.protobuf.Timestamp at = 2; }
+enum Kind {
+  KIND_UNSPECIFIED = 0;
+  TRIGGER_RETIREMENT = 22;
+  GROUP_RETIREMENT = 23; DEFINITION_RETIREMENT = 24; BINDING_RETIREMENT = 25;
+  TENANT = 1; GROUP = 2; DEFINITION = 3; BINDING = 4; RESOURCE = 5;
+  GRANT = 6; RUN = 7; ATTEMPT = 8; ACTION = 9; EVENT = 10; RESOLUTION = 11; TRIGGER = 12; ACTIVATION = 13; LIMITS = 14; USAGE = 15; DELETION = 16; RETENTION = 17; RECEIPT_COMPACTION = 18; CONFIGURATION_LIMITS = 19; CONFIGURATION_USAGE = 20; CONFIGURATION_RECEIPT_COMPACTION = 21;
+}
+message Reference {
+  Kind kind = 1;
+  string tenant_id = 2;
+  string id = 3;
+  string run_id = 4; // Parent run for attempt/action/event history.
+  string trigger_id = 6; string source = 7; // Activation history scope.
+  uint64 sequence = 5; // Action identity; use instead of id for ACTION.
+}
+message Tenant { uint64 revision = 1; uint64 max_running = 2; }
+message Group {
+  string id = 1; uint64 revision = 2; string runtime = 3;
+  repeated string resources = 4; uint64 max_running = 5;
+}
+message Definition {
+  string id = 1; uint64 revision = 2; string group_id = 3; string runtime = 4;
+  string handler = 5; string handler_version = 6; bytes input = 7;
+  string binding_id = 8; repeated string resources = 9; string worker_release = 10;
+  map<string, uint32> worker_release_weights = 11; // Basis points summing to 10000; exclusive with worker_release on definitions.
+}
+message Binding {
+  string id = 1; uint64 revision = 2; string driver = 3;
+  string driver_version = 4; bytes config = 5; repeated string resources = 6;
+}
+message ResourceSpec { string id = 1; string duplex = 2; uint32 capacity = 3; string channel_id = 4; }
+message Resource {
+  ResourceSpec spec = 1; uint64 revision = 2; uint64 epoch = 3; string state = 4;
+  string owner_tenant_id = 5; string run_id = 6; string attempt_id = 7;
+  string owner_id = 8; uint64 channel_epoch = 9;
+  google.protobuf.Timestamp lease_until = 10; google.protobuf.Timestamp last_transition = 11;
+}
+message Grant { string resource_id = 1; uint64 revision = 2; bool allowed = 3; }
+message Run {
+  string id = 1; Definition definition = 2; Group group = 3; Binding binding = 4;
+  string runtime = 5; repeated string resources = 6; string status = 7;
+  uint64 step = 8; bytes state = 9; bytes result = 10; string error = 11;
+  uint64 action_count = 12; uint64 pending_action_sequence = 13;
+  string wait_key = 14; google.protobuf.Timestamp wake_at = 15;
+  string owner_id = 16; string attempt_id = 17; string last_attempt_id = 18;
+  uint64 attempt_count = 19; google.protobuf.Timestamp lease_until = 20;
+  bool cancel_requested = 21; google.protobuf.Timestamp cancel_requested_at = 22;
+  string cancel_reason = 23; google.protobuf.Timestamp created_at = 24;
+  google.protobuf.Timestamp last_transition = 25;
+  Activation activation = 30;
+  string trigger_id = 27; uint64 trigger_revision = 28; google.protobuf.Timestamp scheduled_at = 29;
+  bool summary = 26; // Input/config/state/result bytes are omitted in summaries.
+}
+message Attempt {
+  string id = 1; string run_id = 2; uint64 number = 3; string owner_id = 4;
+  string status = 5; google.protobuf.Timestamp started_at = 6; google.protobuf.Timestamp finished_at = 7;
+}
+message Action {
+  string run_id = 1; uint64 sequence = 2; string attempt_id = 3;
+  string operation = 4; bytes input = 5; string status = 6; bytes result = 7; string error = 8;
+  google.protobuf.Timestamp authorized_at = 9; google.protobuf.Timestamp finished_at = 10;
+}
+message Event {
+  string run_id = 1; string id = 2; string key = 3; bytes data = 4;
+  google.protobuf.Timestamp at = 5; google.protobuf.Timestamp consumed_at = 6;
+}
+message Resolution {
+  string request_id = 1; string tenant_id = 2; string run_id = 3; string resource_id = 4;
+  string actor = 5; string reason = 6; uint64 epoch = 7; string status = 8;
+  bool quiescent = 9; google.protobuf.Timestamp at = 10;
+}
+// Durations use integer nanoseconds, within Go's signed duration range.
+message Timing {
+  string kind = 1; google.protobuf.Timestamp start_at = 2; int64 interval_ns = 3;
+  string cron = 4; string time_zone = 5; string missed_policy = 6;
+  int64 misfire_grace_ns = 7; uint32 catch_up_limit = 8;
+}
+message EventTriggerSpec { string source = 1; }
+message TriggerDefinition {
+  string id = 1; string definition_id = 2; uint64 definition_revision = 3;
+  Timing timing = 4; bool paused = 5; uint32 max_pending = 6;
+  EventTriggerSpec event = 7; // Exactly one of timing or event is required.
+}
+message Trigger {
+  TriggerDefinition definition = 1; uint64 revision = 2;
+  Definition job_definition = 3; Group group = 4; Binding binding = 5;
+  string runtime = 6; repeated string resources = 7;
+  google.protobuf.Timestamp next_at = 8; bool completed = 9;
+  google.protobuf.Timestamp last_transition = 10; google.protobuf.Timestamp last_occurrence = 11;
+  google.protobuf.Timestamp skipped_through = 12; bool summary = 13;
+}
+message PutTrigger { uint64 expected_revision = 1; TriggerDefinition definition = 2; }
+message PauseTrigger { string id = 1; uint64 expected_revision = 2; bool paused = 3; }
+message RetireTrigger { string id = 1; uint64 expected_revision = 2; string reason = 3; }
+// Permanent identity/audit record; retirement preserves existing runs.
+message TriggerRetirement {
+  string id = 1; uint64 revision = 2; google.protobuf.Timestamp retired_at = 3;
+  string actor = 4; string reason = 5;
+}
+
+message Activation {
+  string trigger_id = 1; string source = 2; string event_id = 3; string run_id = 4;
+  uint64 trigger_revision = 5; google.protobuf.Timestamp occurred_at = 6;
+  google.protobuf.Timestamp accepted_at = 7; bytes data = 8; bool summary = 9;
+  bool data_deleted = 10; bytes data_sha256 = 11;
+}
+message Activate {
+  string trigger_id = 1; string source = 2; string event_id = 3;
+  google.protobuf.Timestamp occurred_at = 4; bytes data = 5;
+}
+// Logical record/payload admission limits. Zero means no configured limit.
+message Limits {
+  uint64 revision = 1; uint64 max_pending_runs = 2; uint64 max_stored_runs = 3;
+  uint64 max_inbox_events = 4; uint64 max_inbox_bytes = 5;
+  uint64 max_activations = 6; uint64 max_activation_bytes = 7;
+}
+message Usage {
+  uint64 pending_runs = 1; uint64 stored_runs = 2;
+  uint64 inbox_events = 3; uint64 inbox_bytes = 4;
+  uint64 activations = 5; uint64 activation_bytes = 6;
+}
+message PutLimits { uint64 expected_revision = 1; Limits limits = 2; }
+// Current groups, definitions, bindings and triggers, including pinned payloads.
+// Payload bytes count definition inputs and binding configs; zero is unlimited.
+message ConfigurationLimits {
+  uint64 revision = 1; uint64 max_groups = 2; uint64 max_definitions = 3;
+  uint64 max_bindings = 4; uint64 max_triggers = 5; uint64 max_payload_bytes = 6;
+}
+message PutConfigurationLimits { uint64 expected_revision = 1; ConfigurationLimits limits = 2; }
+message ConfigurationUsage {
+  uint64 groups = 1; uint64 definitions = 2; uint64 bindings = 3;
+  uint64 triggers = 4; uint64 payload_bytes = 5;
+}
+message Retention { uint64 revision = 1; bool enabled = 2; int64 keep_for_ns = 3; }
+message PutRetention { uint64 expected_revision = 1; Retention policy = 2; }
+message Purge {
+  string run_id = 1; uint64 expected_step = 2;
+  google.protobuf.Timestamp finished_before = 3; uint32 batch_size = 4; string reason = 5;
+}
+message Deletion {
+  string run_id = 1; uint64 step = 2; string status = 3;
+  string definition_id = 4; uint64 definition_revision = 5;
+  string trigger_id = 6; uint64 trigger_revision = 7; repeated string resources = 8;
+  google.protobuf.Timestamp created_at = 9; google.protobuf.Timestamp finished_at = 10;
+  google.protobuf.Timestamp deleted_at = 11; google.protobuf.Timestamp last_cleanup_at = 12;
+  string actor = 13; string reason = 14; uint64 policy_revision = 15;
+  uint64 records_deleted = 16; bool cleanup_complete = 17;
+}
+message CompactReceipts {
+  string run_id = 1; uint64 expected_step = 2; uint32 batch_size = 3; string reason = 4;
+}
+message ReceiptCompaction {
+  string run_id = 1; uint64 step = 2; string actor = 3; string reason = 4;
+  google.protobuf.Timestamp started_at = 5; google.protobuf.Timestamp last_cleanup_at = 6;
+  uint64 receipts_compacted = 7; uint64 payload_bytes_removed = 8; reserved 9; bool complete = 10;
+}
+message CompactConfigurationReceipts {
+  string compaction_id = 1; uint64 expected_step = 2; uint32 batch_size = 3; string reason = 4;
+}
+message ConfigurationReceiptCompaction {
+  string id = 1; uint64 step = 2; string actor = 3; string reason = 4;
+  google.protobuf.Timestamp started_at = 5; google.protobuf.Timestamp last_cleanup_at = 6;
+  uint64 receipts_compacted = 7; uint64 payload_bytes_removed = 8; bool complete = 9;
+}
+message Record {
+  Reference reference = 1;
+  oneof value {
+    ConfigurationRetirement configuration_retirement = 24;
+    TriggerRetirement trigger_retirement = 23;
+    ConfigurationReceiptCompaction configuration_receipt_compaction = 22;
+    ConfigurationLimits configuration_limits = 20; ConfigurationUsage configuration_usage = 21;
+    Tenant tenant = 2; Group group = 3; Definition definition = 4; Binding binding = 5;
+    Resource resource = 6; Grant grant = 7; Run run = 8; Attempt attempt = 9; ReceiptCompaction receipt_compaction = 19;
+    Action action = 10; Event event = 11; Resolution resolution = 12; Trigger trigger = 13; Activation activation = 14; Limits limits = 15; Usage usage = 16; Deletion deletion = 17; Retention retention = 18;
+  }
+}
+message PutTenant { uint64 expected_revision = 1; uint64 max_running = 2; }
+message PutGroup { uint64 expected_revision = 1; Group group = 2; }
+message PutDefinition { uint64 expected_revision = 1; Definition definition = 2; }
+message PutBinding { uint64 expected_revision = 1; Binding binding = 2; }
+message PutResource { uint64 expected_revision = 1; ResourceSpec spec = 2; }
+message PutGrant { uint64 expected_revision = 1; string resource_id = 2; bool allowed = 3; }
+message Launch { string definition_id = 1; uint64 definition_revision = 2; string run_id = 3; }
+message Cancel { string run_id = 1; string reason = 2; }
+message Signal { string run_id = 1; string event_id = 2; string key = 3; bytes data = 4; }
+message ResolveResource { string resource_id = 1; uint64 expected_epoch = 2; string reason = 3; bool quiescent = 4; }
+message ResolveRun { string run_id = 1; uint64 expected_step = 2; string status = 3; string reason = 4; bytes result = 5; }
+
+message MutationRequest {
+  Command command = 1;
+  string tenant_id = 2; // Omit for a scoped token's tenant; platform operators must specify it.
+  oneof operation {
+    RetireConfiguration retire_configuration = 24;
+    RetireTrigger retire_trigger = 23;
+    CompactConfigurationReceipts compact_configuration_receipts = 22;
+    PutConfigurationLimits put_configuration_limits = 21;
+    PutTenant put_tenant = 3; PutGroup put_group = 4; PutDefinition put_definition = 5;
+    PutBinding put_binding = 6; PutResource put_resource = 7; PutGrant put_grant = 8;
+    Launch launch = 9; Cancel cancel = 10; Signal signal = 11;
+    ResolveResource resolve_resource = 12; ResolveRun resolve_run = 13;
+    PutTrigger put_trigger = 14; PauseTrigger pause_trigger = 15; Activate activate = 16; PutLimits put_limits = 17; Purge purge = 18; PutRetention put_retention = 19; CompactReceipts compact_receipts = 20;
+  }
+}
+// The acknowledgement deliberately contains no job input, binding, or results.
+// Callback-only credentials therefore cannot use signal responses to read jobs.
+message MutationResponse {
+  string request_id = 1; Reference reference = 2;
+  uint64 revision = 3; uint64 step = 4; string status = 5; uint64 epoch = 6;
+  string run_id = 7; // Original run identity for an event acceptance acknowledgement.
+}
+message GetRequest { Reference reference = 1; bool summary = 2; }
+message ListRequest {
+  Kind kind = 1; string tenant_id = 2; string run_id = 3;
+  uint32 page_size = 4; string page_token = 5; bool ready_only = 6;
+  string trigger_id = 7; string source = 8; // Activation history; source is an optional list filter.
+  string worker_release = 9; // Outstanding RUN records pinned to this published deployment ID.
+}
+message ListResponse { repeated Record records = 1; string next_page_token = 2; }
+
+// Only GROUP, DEFINITION and BINDING are accepted. Bindings require a platform operator.
+message RetireConfiguration { Kind kind = 1; string id = 2; uint64 expected_revision = 3; string reason = 4; }
+// No executable configuration is retained. The last group limit governs pinned work.
+message ConfigurationRetirement {
+  Kind kind = 1; string id = 2; uint64 revision = 3; google.protobuf.Timestamp retired_at = 4;
+  string actor = 5; string reason = 6; uint64 group_max_running = 7;
+}

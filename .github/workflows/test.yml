@@ -1,0 +1,222 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  console:
+    name: Management console browser workflows
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        with:
+          go-version: stable
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: test/console/package-lock.json
+      - name: Install locked browser test tooling
+        run: npm --prefix test/console ci --ignore-scripts
+      - name: Install Chromium with system dependencies
+        run: npm --prefix test/console exec -- playwright install --with-deps chromium
+      - name: Check browser test dependencies
+        run: npm --prefix test/console audit --audit-level=high
+      - name: Exercise the console against real controller APIs
+        run: |
+          ./scripts/test-console.sh
+          ./scripts/test-console-shared.sh
+      - name: Retain browser screenshots and failure traces
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: console-browser
+          path: |
+            tmp/console-browser-results/
+            tmp/console-shared-browser-results/
+          if-no-files-found: ignore
+          retention-days: 7
+  e2e:
+    name: Testcontainers E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        with:
+          go-version: stable
+          cache-dependency-path: |
+            go.sum
+            **/go.sum
+      - name: Enable bridge netfilter for nested Kubernetes
+        run: |
+          sudo modprobe br_netfilter
+          sudo sysctl -w net.bridge.bridge-nf-call-iptables=1
+      - name: Run scheduler clusters, independent workers and Diorama
+        env:
+          DJOB_TEST_ARTIFACT_DIR: ${{ runner.temp }}/djob-e2e-logs
+          DJOB_SOAK_DURATION: 30s
+        run: ./scripts/test-e2e.sh -v
+      - name: Exercise bounded history within the controller memory budget
+        env:
+          DJOB_TEST_ARTIFACT_DIR: ${{ runner.temp }}/djob-history-logs
+          DJOB_SOAK_DURATION: 75s
+          DJOB_SOAK_HISTORY_WINDOW: 1m
+          DJOB_SOAK_COMPACT_CONFIGURATION_RECEIPTS: 'true'
+          DJOB_SOAK_GO_MEMORY_MIB: '256'
+          DJOB_SOAK_MAX_DATABASE_MIB: '192'
+          DJOB_SOAK_MAX_RSS_MIB: '512'
+          DJOB_SOAK_MAX_OPEN_FILES: '512'
+        run: ./scripts/test-e2e.sh -v -run '^TestSimulatorSoak$' -timeout=6m
+      - name: Retain simulator soak measurements
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: simulator-soak
+          path: |
+            ${{ runner.temp }}/djob-e2e-logs/simulator-soak-report.json
+            ${{ runner.temp }}/djob-e2e-logs/simulator-soak-samples.jsonl
+            ${{ runner.temp }}/djob-e2e-logs/large-state-recovery-report.json
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Retain bounded-history measurements
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: simulator-soak-history
+          path: |
+            ${{ runner.temp }}/djob-history-logs/simulator-soak-report.json
+            ${{ runner.temp }}/djob-history-logs/simulator-soak-samples.jsonl
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Install pinned vulnerability scanner
+        run: go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
+      - name: Scan container test dependencies including test code
+        env:
+          GOWORK: 'off'
+        run: govulncheck -C test/e2e -test ./...
+      - name: Retain container logs on failure
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: testcontainers-e2e
+          path: |
+            ${{ runner.temp }}/djob-e2e-logs/*.log
+            ${{ runner.temp }}/djob-history-logs/*.log
+          if-no-files-found: ignore
+          retention-days: 7
+  security:
+    name: Vulnerabilities
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        with:
+          go-version: stable
+          cache-dependency-path: |
+            go.sum
+            **/go.sum
+      - name: Install pinned vulnerability scanner
+        run: go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
+      - name: Scan repository history for secrets
+        run: |
+          mkdir -p "$RUNNER_TEMP/djob-security" "$RUNNER_TEMP/djob-security-tools"
+          GOBIN="$RUNNER_TEMP/djob-security-tools" go install github.com/zricethezav/gitleaks/v8@v8.30.1
+          "$RUNNER_TEMP/djob-security-tools/gitleaks" git --log-opts=--all --redact=100 --report-format=json --report-path="$RUNNER_TEMP/djob-security/secrets.json" .
+      - name: Scan every workspace module and all release binaries
+        run: ./scripts/check-vulnerabilities.sh "$RUNNER_TEMP/djob-security"
+      - name: Retain vulnerability reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: vulnerabilities
+          path: |
+            ${{ runner.temp }}/djob-security/*.txt
+            ${{ runner.temp }}/djob-security/*.json
+          if-no-files-found: ignore
+          retention-days: 7
+  workspace:
+    name: Go ${{ matrix.go }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GOFLAGS: -p=1
+      GOMAXPROCS: '2'
+    strategy:
+      fail-fast: false
+      matrix:
+        go: ['1.26.x', 'stable']
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        with:
+          go-version: ${{ matrix.go }}
+          cache-dependency-path: |
+            go.sum
+            **/go.sum
+      - name: Build CLI with race detection
+        env:
+          DJOB_TEST_BINARY: ${{ runner.temp }}/djob-test
+        run: go build -race -o "$DJOB_TEST_BINARY" ./cmd/djob
+      - name: Test every workspace module and the CLI cluster
+        env:
+          DJOB_TEST_BINARY: ${{ runner.temp }}/djob-test
+          DJOB_TEST_ARTIFACT_DIR: ${{ runner.temp }}/djob-cluster-logs
+        run: ./scripts/test-workspace.sh
+      - name: Validate storage capacity forecast rules
+        run: >-
+          docker run --rm --entrypoint /bin/promtool
+          -v "$PWD/deploy/prometheus:/rules:ro" -w /rules
+          prom/prometheus:v3.16.0 test rules capacity.test.yml
+      - name: Test release toolchain selection and manifest checks
+        run: python3 -m unittest discover -s scripts -p '*_test.py'
+      - name: Check reviewed source dispositions and upstream notices
+        run: python3 scripts/check_provenance.py
+      - name: Keep project documentation private in the publication repository
+        if: github.repository == 'duravela/djob'
+        run: |
+          python3 - <<'PY'
+          import subprocess
+          paths = subprocess.check_output(['git', 'ls-tree', '-r', '--name-only', 'HEAD'], text=True).splitlines()
+          assert not any(p == 'docs' or p.startswith('docs/') for p in paths), 'Private docs must not be committed here'
+          PY
+      - name: Validate SDK and external worker/node consumer packaging
+        run: ./scripts/check-packaging.sh
+      - name: Build controller, worker and console without cgo
+        env:
+          CGO_ENABLED: '0'
+        run: |
+          go build -o "$RUNNER_TEMP/djob-linux" ./cmd/djob
+          go build -o "$RUNNER_TEMP/djob-worker-linux" ./cmd/djob-worker
+          go build -o "$RUNNER_TEMP/djob-console-linux" ./cmd/djob-console
+      - name: Retain cluster logs on failure
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: cli-cluster-go-${{ matrix.go }}
+          path: ${{ runner.temp }}/djob-cluster-logs/**/*.log
+          if-no-files-found: ignore
+          retention-days: 7

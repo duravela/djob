@@ -1,0 +1,187 @@
+{
+  "Commands": [
+    {
+      "RequestID": "definition",
+      "At": "2026-11-08T11:00:00Z",
+      "Configure": null,
+      "CreateRun": null,
+      "Acquire": null,
+      "Renew": null,
+      "Drain": null,
+      "Release": null,
+      "Expire": null,
+      "Claim": null,
+      "Finish": null,
+      "ResolveChannel": null,
+      "ResolveRun": null,
+      "Job": {
+        "PutDefinition": {
+          "Definition": {
+            "TenantID": "acme",
+            "ID": "check",
+            "Revision": 2,
+            "GroupID": "meters",
+            "Runtime": "steps/v1",
+            "Handler": "acme.check-measurement",
+            "HandlerVersion": "1",
+            "Input": "eyJtYXhpbXVtIjoxMDB9",
+            "BindingID": "meter",
+            "Resources": [
+              "bus"
+            ]
+          },
+          "ExpectedRevision": 1
+        }
+      }
+    },
+    {
+      "RequestID": "action",
+      "At": "2026-11-08T11:00:00Z",
+      "Configure": null,
+      "CreateRun": null,
+      "Acquire": null,
+      "Renew": null,
+      "Drain": null,
+      "Release": null,
+      "Expire": null,
+      "Claim": null,
+      "Finish": null,
+      "ResolveChannel": null,
+      "ResolveRun": null,
+      "Job": {
+        "Advance": {
+          "TenantID": "acme",
+          "RunID": "run",
+          "AttemptID": "attempt",
+          "OwnerID": "worker",
+          "ExpectedStep": 2,
+          "Kind": "action",
+          "State": "bWVhc3VyZWQ=",
+          "EventID": "",
+          "Operation": "measure",
+          "WaitKey": "",
+          "WakeAt": "0001-01-01T00:00:00Z",
+          "Status": "",
+          "Error": "",
+          "Quiescent": false
+        }
+      }
+    }
+  ],
+  "Run": {
+    "Activation": {
+      "TenantID": "acme",
+      "TriggerID": "incoming",
+      "Source": "producer",
+      "EventID": "first",
+      "RunID": "run",
+      "TriggerRevision": 5,
+      "OccurredAt": "2026-11-08T11:00:00Z",
+      "AcceptedAt": "2026-11-08T11:00:00Z",
+      "Data": "ZXZlbnQ=",
+      "DataSHA256": "AQID"
+    },
+    "TriggerID": "incoming",
+    "TriggerRevision": 5,
+    "ScheduledAt": "2026-11-08T11:00:00Z",
+    "TenantID": "acme",
+    "ID": "run",
+    "Definition": {
+      "TenantID": "acme",
+      "ID": "check",
+      "Revision": 2,
+      "GroupID": "meters",
+      "Runtime": "steps/v1",
+      "Handler": "acme.check-measurement",
+      "HandlerVersion": "1",
+      "Input": "eyJtYXhpbXVtIjoxMDB9",
+      "BindingID": "meter",
+      "Resources": [
+        "bus"
+      ]
+    },
+    "Group": {
+      "TenantID": "acme",
+      "ID": "meters",
+      "Revision": 1,
+      "Runtime": "steps/v1",
+      "Resources": [
+        "bus"
+      ],
+      "MaxRunning": 2
+    },
+    "Binding": {
+      "TenantID": "acme",
+      "ID": "meter",
+      "Revision": 3,
+      "Driver": "mqtt",
+      "DriverVersion": "1",
+      "Config": "eyJjb25uZWN0aW9uIjoibGFiIn0=",
+      "Resources": [
+        "bus"
+      ]
+    },
+    "Runtime": "steps/v1",
+    "Resources": [
+      "bus"
+    ],
+    "Status": "running",
+    "Step": 3,
+    "State": "bWVhc3VyZWQ=",
+    "Result": "cmVzdWx0",
+    "Error": "diagnostic",
+    "ActionCount": 1,
+    "PendingAction": {
+      "TenantID": "acme",
+      "RunID": "run",
+      "Sequence": 1,
+      "AttemptID": "attempt",
+      "Operation": "measure",
+      "Input": "cmVxdWVzdA==",
+      "Status": "succeeded",
+      "Result": "eyJ2YWx1ZSI6NDJ9",
+      "Error": "",
+      "AuthorizedAt": "2026-11-08T11:00:00Z",
+      "FinishedAt": "2026-11-08T11:00:01Z"
+    },
+    "WaitKey": "reply",
+    "WakeAt": "2026-11-08T11:01:00Z",
+    "OwnerID": "worker",
+    "AttemptID": "attempt",
+    "LastAttemptID": "previous",
+    "AttemptCount": 2,
+    "LeaseUntil": "2026-11-08T11:00:30Z",
+    "CancelRequested": true,
+    "CancelRequestedAt": "2026-11-08T11:00:00Z",
+    "CancelReason": "requested",
+    "CreatedAt": "2026-11-08T11:00:00Z",
+    "LastTransition": "2026-11-08T11:00:01Z"
+  },
+  "Event": {
+    "TenantID": "acme",
+    "RunID": "run",
+    "ID": "reply",
+    "Key": "reply",
+    "Data": "cmVzcG9uc2U=",
+    "At": "2026-11-08T11:00:00Z",
+    "ConsumedAt": "2026-11-08T11:00:01Z"
+  },
+  "Resource": {
+    "Spec": {
+      "ID": "bus",
+      "Duplex": "half",
+      "Capacity": 1,
+      "ChannelID": "bus"
+    },
+    "Revision": 1,
+    "Epoch": 2,
+    "State": "owned",
+    "TenantID": "acme",
+    "RunID": "run",
+    "AttemptID": "attempt",
+    "OwnerID": "worker",
+    "ChannelEpoch": 4,
+    "LeaseUntil": "2026-11-08T11:01:00Z",
+    "LastTransition": "2026-11-08T11:00:00Z"
+  }
+}

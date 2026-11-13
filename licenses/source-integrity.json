@@ -1,0 +1,502 @@
+{
+  "format_version": 1,
+  "purpose": "Reviewed source and upstream-license integrity baseline. Attribution and grants are supplied in source notices, THIRD_PARTY_NOTICES.txt and licenses/. This is not external legal approval.",
+  "license_files_sha256": {
+    "licenses/CockroachDB-23.1-LICENSE.txt": "8a2fba9d26592ff3538f44c96d1b894ef44649058b4d04f3fda49518a9c4ae11",
+    "licenses/MIT-rqlite.txt": "2b00e7afec26663e829b8286d6e6276179894c1d70be9c35d05e3ac7dd1dae08",
+    "licenses/BSD-golang.txt": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad",
+    "licenses/MIT-fatih-pool.txt": "de95ed802d2f90e3c72cb3c9a927cca5f2aec234a3ef1250232db0f8178b2d93",
+    "licenses/CockroachDB-23.1-BSL.txt": "423a46d38ea0ef6d82283eb747ae738c44e4a41e59cd6d981524e6a47d1d4511",
+    "licenses/Apache-2.0.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "pkg/client/NOTICE.txt": "5566483c76b896bd11a8c4fea9bbe6c860742d46f74fef9b156eae2ea7bb894d",
+    "pkg/apiserver/NOTICE.txt": "5566483c76b896bd11a8c4fea9bbe6c860742d46f74fef9b156eae2ea7bb894d",
+    "pkg/util/tcputil/NOTICE.txt": "5566483c76b896bd11a8c4fea9bbe6c860742d46f74fef9b156eae2ea7bb894d"
+  },
+  "files": [
+    {
+      "path": "internal/store/transport.go",
+      "action": "retained_with_attribution",
+      "sha256": "8b2b1846ba889978019e4fd4a9b62760699dfdccb97e1d1b90fb70b2c5c25f82"
+    },
+    {
+      "path": "pkg/apiserver/service.go",
+      "action": "retained_with_attribution",
+      "sha256": "add67792c6913c06b71420e6f9e4dba7e6112c35ba43a5bce952742a0f922e85"
+    },
+    {
+      "path": "pkg/base/config.go",
+      "action": "retained_with_attribution",
+      "sha256": "70998835923447f3e4129b01e81547b9e84523aa5eeb79efae318b745222f056"
+    },
+    {
+      "path": "pkg/base/join_list.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/base/test_server_args.go",
+      "action": "replaced_implementation",
+      "sha256": "e1054617b9ee470c233b8c496357fa0a87787831c27115a6fd2b1d77f9fa7bda"
+    },
+    {
+      "path": "pkg/client/client.go",
+      "action": "retained_with_attribution",
+      "sha256": "1a9db173d744da6dddd674598a8c1eeb4fa387ba1f597d34869a235d28786b6f"
+    },
+    {
+      "path": "pkg/consistenthash/README.md",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/consistenthash/consistenthash.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/consistenthash/consistenthash_test.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/consistenthash/options.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/node/raft_node.go",
+      "action": "retained_with_attribution",
+      "sha256": "e3f2cf5f16d822e7e6189057237cd1d19617193236b1e78338a077308b3cebda"
+    },
+    {
+      "path": "pkg/proto/common/v1/common.pb.go",
+      "action": "retained_with_attribution",
+      "sha256": "eb19eaecdb892ee3a844c33718035f54b516f8fed3f439508ac9b91fc3c0f287"
+    },
+    {
+      "path": "pkg/proto/common/v1/common.proto",
+      "action": "retained_with_attribution",
+      "sha256": "f99ea633e06aa118889ef72c6d17bc33c2541d4cc17a31dbc985786c76c85837"
+    },
+    {
+      "path": "pkg/proto/internals/v1/status.proto",
+      "action": "retained_with_attribution",
+      "sha256": "f3c932280b5e8d6dd42a240b76f99c52d2e16155c9bb6c44ec59336786b8fe99"
+    },
+    {
+      "path": "pkg/proto/runtime/v1/admin.pb.go",
+      "action": "retained_with_attribution",
+      "sha256": "e33693f9b6c09531e83f6564e23f8c3d020ed52c16d4981a5dfc88ce4d4d22f0"
+    },
+    {
+      "path": "pkg/proto/runtime/v1/admin.pb.gw.go",
+      "action": "retained_with_attribution",
+      "sha256": "7963306a130a9aa1b8a7bcf46ddf2447f340f88380d0f9dcd2c0bf9d358c2878"
+    },
+    {
+      "path": "pkg/proto/runtime/v1/admin.proto",
+      "action": "retained_with_attribution",
+      "sha256": "72b3578f1ebfa815dddf88233824363f188470e95bd29ef6550310645a91fd76"
+    },
+    {
+      "path": "pkg/proto/runtime/v1/admin_grpc.pb.go",
+      "action": "retained_with_attribution",
+      "sha256": "0257111a28edbc755c47dcc40f4715fdae6959c0ca39eedd2966f52e644fa586"
+    },
+    {
+      "path": "pkg/proto/scheduler/v1/scheduler.pb.go",
+      "action": "retained_with_attribution",
+      "sha256": "a9c221642631175e4a98306db2f18800da1811484229440953d526ad34ed3716"
+    },
+    {
+      "path": "pkg/proto/scheduler/v1/scheduler.pb.gw.go",
+      "action": "retained_with_attribution",
+      "sha256": "c4d3aaa13dc0582a2146d6aace4bfbeaea45531c7cab25dec5f1b385fb6b023b"
+    },
+    {
+      "path": "pkg/proto/scheduler/v1/scheduler.proto",
+      "action": "retained_with_attribution",
+      "sha256": "4194c559cdb4565e4618a8df35e9ced9dffa7cbac9fdfbffd81b40abfccff59a"
+    },
+    {
+      "path": "pkg/proto/scheduler/v1/scheduler_grpc.pb.go",
+      "action": "retained_with_attribution",
+      "sha256": "2f5a4b3b8aaaaafe2a4b613e95cead0d8bb924eadadc821ada290d2d820544a6"
+    },
+    {
+      "path": "pkg/rpc/client.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/rpc/connection.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/rpc/context.go",
+      "action": "replaced_implementation",
+      "sha256": "1aafdf6d47ec682e15dd4e26261e99bf5ba9d489237224635bc0c51e5061e12b"
+    },
+    {
+      "path": "pkg/rpc/context_test.go",
+      "action": "retained_first_party",
+      "sha256": "5527ff605263f086370f893fedcded0704433dafae7aae65a4fdbbd2dea475a4"
+    },
+    {
+      "path": "pkg/rpc/errors.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/rpc/grpc.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/rpc/metrics.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/rpc/peer.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/rpc/peer_map.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/rpc/rpcbase/nodedialer.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/rpc/settings.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/rpc/stream_pool.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/server/admin.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/server/api_v1.go",
+      "action": "retained_first_party",
+      "sha256": "8890bf6fc4ac2ee82be1ad12655b57094daa4c25f14baf26282ea32cee4ef2ca"
+    },
+    {
+      "path": "pkg/server/apiconstants/constants.go",
+      "action": "replaced_implementation",
+      "sha256": "abd29111f7fde9f537fbf0c3fc9efb4c1ec11719e5c6e257bd2e0d2a837791af"
+    },
+    {
+      "path": "pkg/server/compatibility_test.go",
+      "action": "retained_first_party",
+      "sha256": "f86421850942b3d30fab9dc117907cea4eda5415e801c029ba80e09554048220"
+    },
+    {
+      "path": "pkg/server/config.go",
+      "action": "retained_with_attribution",
+      "sha256": "8728ca3012c8d38db99c8844f666e6a6411adbb707412fee722a640aa456e286"
+    },
+    {
+      "path": "pkg/server/grpc_gateway.go",
+      "action": "replaced_implementation",
+      "sha256": "4cc2abd6ad18cd4f1b1f2d63c6b6b254cd48a0111bf80986a9325698541dc555"
+    },
+    {
+      "path": "pkg/server/grpc_server.go",
+      "action": "retained_with_attribution",
+      "sha256": "a8c07804a2ce4db48fc9723b3c6035a7c1cd924500a39165cac7ea6b8c37fb0e"
+    },
+    {
+      "path": "pkg/server/listen_and_update_addrs.go",
+      "action": "replaced_implementation",
+      "sha256": "5f9c79019375dfc4b9871bcfd81b666d49c35c96ab13aaa59f2cb9808afae1f7"
+    },
+    {
+      "path": "pkg/server/node.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/server/scheduler.go",
+      "action": "retained_with_attribution",
+      "sha256": "fe1570468d62c1c19e6b72c103bcceef386e91d0568152884c35fa275bb03d47"
+    },
+    {
+      "path": "pkg/server/server.go",
+      "action": "retained_with_attribution",
+      "sha256": "c62e0de21cef1d1bbd634f64a7f1336370f448cde88b43a57a5b7fa74a9b6b67"
+    },
+    {
+      "path": "pkg/server/server_http.go",
+      "action": "replaced_implementation",
+      "sha256": "680a8ea18f90a61d464dda9c20333ac31bc3db52797bc34a782407f619b171c7"
+    },
+    {
+      "path": "pkg/server/server_test.go",
+      "action": "retained_first_party",
+      "sha256": "42208916f19a199bdfd680c12efad7ea9975463dd700593c859d01df5e8f9382"
+    },
+    {
+      "path": "pkg/server/serverctl/api.go",
+      "action": "replaced_implementation",
+      "sha256": "88962c9ad88c0792f5152ff23bfa01d1a5b5c70a3a2c8d6b20f317928c1c9ab7"
+    },
+    {
+      "path": "pkg/server/serverctl/shutdown.go",
+      "action": "replaced_implementation",
+      "sha256": "55991bd51e11aaa2ebcee55f10d1d40515eb3996bc08f875a4dddffcbca7fe2c"
+    },
+    {
+      "path": "pkg/server/srverrors/errors.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/server/stop_trigger.go",
+      "action": "replaced_implementation",
+      "sha256": "677a722c02c0a478799073743d313af2c3fddb455a2655530c0be8559936c415"
+    },
+    {
+      "path": "pkg/server/testserver.go",
+      "action": "replaced_implementation",
+      "sha256": "3514ef17d79e2dca1cd1e773dcaa20a7d44d1315e5d5925b9fee8b9e4dd32b06"
+    },
+    {
+      "path": "pkg/server/testserver_http.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/tcp/dialer.go",
+      "action": "retained_with_attribution",
+      "sha256": "f3dff22b62e695ed15fdadc4b783a6dbca0c263493f271891e4015cb3393085e"
+    },
+    {
+      "path": "pkg/tcp/dialer_test.go",
+      "action": "retained_with_attribution",
+      "sha256": "7b0b626b2a0ba6016e6f00df2bffbedbb1b0862fedd468637c833d8931cd5bf1"
+    },
+    {
+      "path": "pkg/tcp/listener_shutdown_test.go",
+      "action": "retained_first_party",
+      "sha256": "725efeba29c953c349abfe4a16eb57809ee65e77622ecaf0e2722798866e7124"
+    },
+    {
+      "path": "pkg/tcp/mux.go",
+      "action": "retained_with_attribution",
+      "sha256": "03895953c72c07e6ede86866a958978e01a271b2cdf4697000bce823587b50d3"
+    },
+    {
+      "path": "pkg/tcp/mux_test.go",
+      "action": "retained_with_attribution",
+      "sha256": "56dc054087e932816d11e57ea01c6266d4fb5815ed162bb76e341f970d2534d6"
+    },
+    {
+      "path": "pkg/tcp/pool/channel.go",
+      "action": "retained_with_attribution",
+      "sha256": "12040bf31e3cdaf0c82e7409e9da72cb1d59aa601f2dcefae8a8e401df71a3fa"
+    },
+    {
+      "path": "pkg/tcp/pool/conn.go",
+      "action": "retained_with_attribution",
+      "sha256": "c07049dac2ead3938f38331d682cccb438ef787922bc833c3137c0ec577f4156"
+    },
+    {
+      "path": "pkg/tcp/pool/pool.go",
+      "action": "retained_with_attribution",
+      "sha256": "91cc5d654187cc78cb83b74f78fc2d64447963c9fc1a94658df97ab4f27e9fda"
+    },
+    {
+      "path": "pkg/testutils/serverutils/api.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/testutils/serverutils/conditional_wrap.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/testutils/serverutils/conditional_wrap_internal_test.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/testutils/serverutils/conditional_wrap_test.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/testutils/serverutils/rpc_conn.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/testutils/serverutils/server.go",
+      "action": "replaced_implementation",
+      "sha256": "b99c59cc6d82d497199605dc3b028c54a1b27b5716e5c2d6d8a8d9c8cf7acf19"
+    },
+    {
+      "path": "pkg/testutils/serverutils/server_test.go",
+      "action": "retained_first_party",
+      "sha256": "6fce0bf59ddca5d3806c66cda0c5299846f24d7e9a3c8bea60d0caba3657d964"
+    },
+    {
+      "path": "pkg/testutils/serverutils/test_server_shim.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/testutils/serverutils/test_tenant_shim.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/testutils/subtest.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/util/allstacks/allstacks.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/util/apiutil/apiutil.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/util/circuit/circuitbreaker.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/util/circuit/event_handler.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/util/circuit/options.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/util/ctxutil/fast_value.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/util/debugutil/debugutil.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/util/envutil/env.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/util/growstack/growstack.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/util/growstack/growstack.s",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/util/httputil/http.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/util/leaktest/leaktest.go",
+      "action": "replaced_implementation",
+      "sha256": "177570d6f5faca403c5aaa21ab9104ceb4474197df336cf10ae5feb5f707fbfc"
+    },
+    {
+      "path": "pkg/util/log/ambient_context.go",
+      "action": "replaced_implementation",
+      "sha256": "8b1385a678eec30fdbf243c05be078666a4fe168d5e564031af26a8f479a2ec3"
+    },
+    {
+      "path": "pkg/util/log/logcrash/crash_reporting.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/util/log/severity/severity_generated.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/util/netutil/addr/addr.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/util/netutil/net.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/util/protoutil/clone.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/util/protoutil/jsonpb_marshal.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/util/protoutil/marshal.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/util/protoutil/marshaler.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/util/quotapool/config.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/util/quotapool/intpool.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/util/quotapool/notify_queue.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/util/quotapool/quotapool.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/util/settings/common.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/util/settings/registry.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/util/settings/setting.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/util/settings/values.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/util/stop/handle.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/util/stop/stopper.go",
+      "action": "replaced_implementation",
+      "sha256": "bf7f23a41c32e99cd40df1afdab6935ad39fdc8da35811feedd26ff6968b5aec"
+    },
+    {
+      "path": "pkg/util/stop/stopper_test.go",
+      "action": "retained_first_party",
+      "sha256": "adc2b0f3872574ceeea7d59433b9ab8002c58c7775615eff7978dd60597ae609"
+    },
+    {
+      "path": "pkg/util/syncutil/mutex_sync.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/util/tcputil/tcp.go",
+      "action": "retained_with_attribution",
+      "sha256": "2bc2132c49d4a5b50d7640b422358b82fc18c73c47d8cd7e3d8af909a0f89cac"
+    },
+    {
+      "path": "pkg/util/timeutil/time.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/util/timeutil/time_source.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/util/timeutil/timer.go",
+      "action": "removed"
+    },
+    {
+      "path": "pkg/util/unresolved_addr.go",
+      "action": "removed"
+    }
+  ]
+}

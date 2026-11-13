@@ -1,0 +1,25 @@
+// Copyright 2021 The Dapr Authors
+// SPDX-License-Identifier: Apache-2.0
+// Adapted from Dapr v1.16.0; packages, service selection and message fields modified
+// for djob. See licenses/Apache-2.0.txt and THIRD_PARTY_NOTICES.txt.
+
+syntax = "proto3";
+
+package runtime;
+
+import "common/v1/common.proto";
+
+option go_package = "github.com/duravela/djob/pkg/proto/runtime/v1;runtime";
+
+service Admin {
+    rpc InvokeService(InvokeServiceRequest) returns (common.InvokeResponse) {}
+}
+
+// InvokeServiceRequest represents the request message for Service invocation.
+message InvokeServiceRequest {
+  // Required. Callee's app id.
+  string id = 1;
+
+  // Required. message which will be delivered to callee.
+  common.InvokeRequest message = 3;
+}

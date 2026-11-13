@@ -1,0 +1,62 @@
+groups:
+  - name: djob-capacity
+    interval: 1m
+    rules:
+      - record: djob:store_growth_bytes_per_second
+        expr: |
+          clamp_min(deriv(djob_store_file_bytes[6h]), 0)
+          and (count_over_time(djob_store_file_bytes[6h]) >= 60)
+          and (count_over_time(djob_store_file_bytes[6h] offset 1h) > 0)
+          and ignoring(component) (djob_storage_probe_success{component="store"} == 1)
+          and ignoring(component) (djob_storage_sample_age_seconds{component="store"} < 30)
+      - record: djob:store_seconds_to_limit
+        expr: |
+          (clamp_min(djob_admission_max_database_bytes - djob_store_file_bytes, 0)
+          / djob:store_growth_bytes_per_second)
+          and (djob_admission_max_database_bytes > 0)
+          and (djob:store_growth_bytes_per_second > 0)
+      - record: djob:volume_consumption_bytes_per_second
+        expr: |
+          clamp_min(-deriv(djob_storage_volume_available_bytes[6h]), 0)
+          and (count_over_time(djob_storage_volume_available_bytes[6h]) >= 60)
+          and (count_over_time(djob_storage_volume_available_bytes[6h] offset 1h) > 0)
+          and (djob_storage_probe_success == 1)
+          and (djob_storage_sample_age_seconds < 30)
+      - record: djob:volume_seconds_to_headroom
+        expr: |
+          (clamp_min(djob_storage_volume_available_bytes
+          - ignoring(component) group_left djob_admission_min_storage_available_bytes, 0)
+          / djob:volume_consumption_bytes_per_second)
+          and (djob:volume_consumption_bytes_per_second > 0)
+      - alert: DjobDatabaseCapacityWithinWeek
+        expr: djob:store_seconds_to_limit < 7 * 24 * 3600
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: Database file growth projects admission capacity within seven days
+          description: Review the six-hour growth trend, permanent receipts and audits, reusable pages and storage-report. Plan capacity or offline compaction; identity metadata must remain durable.
+      - alert: DjobDatabaseCapacityWithinDay
+        expr: djob:store_seconds_to_limit < 24 * 3600
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: Database file growth projects admission capacity within one day
+          description: Provision headroom before admission stops. Forecasts are estimates and do not replace the existing storage-pressure alerts.
+      - alert: DjobVolumeHeadroomWithinWeek
+        expr: djob:volume_seconds_to_headroom < 7 * 24 * 3600
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: Filesystem consumption projects storage headroom within seven days
+          description: Inspect the component directory, shared-volume consumers, WAL and snapshots; capacity is shared when components use the same filesystem.
+      - alert: DjobVolumeHeadroomWithinDay
+        expr: djob:volume_seconds_to_headroom < 24 * 3600
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: Filesystem consumption projects storage headroom within one day
+          description: Add capacity before the filesystem reaches its configured admission headroom. Do not delete retained identity records.

@@ -1,0 +1,816 @@
+Duravela Internal Business Source Available License 1.1
+SPDX-License-Identifier: LicenseRef-Duravela-IBSA-1.1
+
+Copyright (c) 2026 Sebastian Kaiser
+
+Scope and separate licenses
+
+This Duravela Internal Business Source Available License 1.1 (the "License")
+governs the software, source code, object code, documentation, examples,
+tests, fixtures, configuration files, build files, scripts, container files,
+generated templates, and other materials made available by Licensor under
+this License as part of Duravela, formerly known as djob (collectively, the
+"Licensed Work"). It grants rights only to the extent Licensor is entitled
+to grant them. Duravela and djob identify the project; the Licensor is
+Sebastian Kaiser, not a separate entity inferred from a project name.
+
+The entire sdk/go/ subtree as distributed by Licensor, including its worker
+client, handlers, protocol schemas and generated bindings, is separately
+licensed under the Apache License, Version 2.0 in sdk/go/LICENSE. It is
+excluded from the Licensed Work. Separately licensed third-party materials
+and materials carrying their own license notices are also excluded to the
+extent of those separate licenses. See THIRD_PARTY_NOTICES.txt and the
+applicable notices accompanying those materials.
+
+No provision of this License imposes additional conditions on rights validly
+granted under those separate licenses, including conditions concerning AI,
+patents, contributions, public forks, commercial use, redistribution, or
+termination. Those rights remain subject to their own license terms.
+
+Using, modifying, distributing or selling the Apache-licensed SDK, software
+using that SDK, or an independent implementation of its public interfaces
+does not by itself require an engine commercial license. You may license
+Your own independent worker or application code under terms of Your choice.
+The SDK portions retain their Apache License terms. Incorporating or
+supplying engine code, including an engine-licensed adapter, remains subject
+to the terms applicable to that engine code.
+
+Combining materials in one file, binary, package, container or repository
+does not eliminate the licenses governing their respective portions. Moving
+engine material into sdk/go/, or moving separately licensed material out of
+that subtree, does not by itself change its license. Inclusion in a
+distribution, an incomplete notice, or a repository path does not expand
+Licensor's authority over third-party material.
+
+This License is source-available. It is not an open source license. Rights
+not expressly granted are reserved, subject to mandatory law and any
+separate rights validly granted for the relevant material.
+
+1. Acceptance and mandatory rights
+
+By exercising rights granted under this License, You accept its terms. If
+You act for a legal entity, You represent that You are authorized to accept
+these terms on its behalf. If You do not accept this License, it grants You
+no rights in the Licensed Work.
+
+Nothing in this License restricts rights that applicable law does not allow
+to be excluded or limited by agreement. This includes applicable mandatory
+rights concerning observation, study, testing, interoperability,
+decompilation, backup copies, exhaustion, research, and text-and-data
+mining, subject in each case to the conditions of the applicable law.
+
+The scope exclusions above, this mandatory-rights provision, and Section 10
+apply throughout this License. Exercising a right available independently
+of this License does not by itself require a commercial agreement under
+Section 12.
+
+2. Definitions
+
+"Licensor" means Sebastian Kaiser, acting as the holder of or person
+authorized to license the rights granted under this License.
+
+"You" means the individual or legal entity exercising rights under this
+License.
+
+"Your Company" means You and any legal entity that You control, that
+controls You, or that is under common control with You. "Control" means
+direct or indirect ownership of more than fifty percent of the voting
+interests, or the legal power to direct management and policies.
+
+"Service Provider" means a contractor, consultant, cloud provider, hosting
+provider, CI/CD provider, security reviewer, AI tool provider, or other third
+party acting on behalf of and under the direction of Your Company solely
+for the activities permitted to Your Company under this License. A provider
+may serve multiple customers; each engagement must independently meet the
+conditions of this License. Providing an Engine Offering on the provider's
+own account is not acting as a Service Provider for that offering.
+
+"Permitted Internal Use" means use of the Licensed Work under Your
+Company's control for Your Company's own business operations. It includes
+development, testing, CI/CD, QA, evaluation, benchmarking, security and
+compliance review, staging, and production. Personal study and
+noncommercial experimentation are also permitted, subject to the same
+conditions on distribution and provision of engine capabilities to others.
+
+Permitted Internal Use includes operating the engine as a backend component
+of Your Company's own products and services, including paid products and
+services, when customers receive application-specific business operations
+and their results rather than an Engine Offering. Examples include order
+processing, device polling, maintenance, and generation and delivery of
+customer reports. Earning revenue from those applications does not by
+itself require a commercial license.
+
+Customers may select, parameterize, schedule, repeat, or combine operations
+defined by Your application where that configuration remains confined to
+the application's business functions. Choosing a report's contents,
+delivery time, recurrence or recipients does not by itself create an Engine
+Offering. This permission does not extend to an application that supplies
+general execution or orchestration capability under a domain label or
+through a thin wrapper.
+
+Your Company must retain authority over the purpose and permitted scope of
+its use, including work performed on its behalf by Service Providers. A
+provider's ownership of infrastructure does not by itself prevent Permitted
+Internal Use. Customer-specific accounts or dedicated instances do not by
+themselves convert a provider's Engine Offering into a qualifying service
+engagement. Shipping or otherwise supplying engine code to customers of
+Your product remains subject to Sections 5 and 12, except for the limited
+private service engagements and contribution activities expressly allowed
+by Sections 3 and 7.
+
+"Engine Functionality" means the capabilities supplied by operating or
+incorporating the Licensed Work or its modifications to accept, schedule,
+coordinate, dispatch or execute jobs; maintain durable runs, conversations,
+events, timers and action outcomes; manage workers, execution resources,
+leases and worker releases; operate replicated controller clusters; or
+administer, monitor and recover those facilities. This term describes the
+capabilities of the Licensed Work and does not assert exclusive rights in
+functionality, ideas, principles, algorithms, interfaces or facts.
+
+"Engine Offering" means using, operating, providing or incorporating the
+Licensed Work or its modifications to supply Engine Functionality to third
+parties as an execution engine, job queue, scheduler, orchestration
+platform, worker platform or similar infrastructure capability, whether
+hosted, managed, embedded, white-labelled or exposed through a wrapper, and
+whether paid or free. It includes permitting customers to submit or
+configure general-purpose jobs or workflows, execute customer-supplied
+programs as general computing tasks, or register or manage workers for
+their own execution purposes through the engine. The capability actually
+supplied determines this classification; branding, a nominal application
+domain, a separate customer license, or single tenancy is not sufficient
+to make an Engine Offering Permitted Internal Use. Application configuration
+expressly permitted above and qualifying Service Provider work under
+Section 3 are excluded. Independent software and the Apache-licensed SDK
+are excluded as stated in the scope provisions and Section 5.
+
+"Commercial Redistribution" means selling, renting, leasing, sublicensing,
+publishing, distributing or otherwise supplying the Licensed Work in
+source or object form to a third party for payment or commercial advantage.
+Noncommercial distribution is separately addressed in Section 5(b).
+
+"Product Embedding" means including, bundling, integrating, linking,
+packaging, containerizing or shipping the Licensed Work as part of a
+product, appliance, developer tool or other offering supplied to a third
+party, or incorporating it into an Engine Offering. Operating the internal
+backend of an application within Permitted Internal Use is excluded.
+
+"Engine Expression" means copyright-protected expression in the Licensed
+Work, including protected source or object code and protected portions of
+documentation, examples, tests, fixtures, templates, scripts and other
+materials. It does not include unprotected ideas, principles, algorithms,
+functionality, facts, or interface and format concepts merely as such, nor
+materials excluded from this License by the scope provisions. Whether
+expression is protected is determined by applicable law.
+
+"AI System" means a machine learning, foundation, language, code-generation,
+embedding, classification, recommendation or other artificial intelligence
+system, including an automated software engineering or agentic system.
+
+"AI Training Use" means using material forming part of the Licensed Work
+as training, adaptation, evaluation or model-development content for an AI
+System, including:
+
+(a) pre-training, training, fine-tuning, retraining, distilling or adapting
+    model parameters or learned behavior using that material;
+
+(b) creating, augmenting, curating, labeling, testing or supplying training,
+    preference, evaluation, red-team or benchmark datasets using that
+    material for the development, selection or improvement of an AI System;
+
+(c) generating synthetic data from that material for the purposes in
+    paragraphs (a) or (b); or
+
+(d) retaining or incorporating that material in reusable model-development
+    corpora or services for those purposes outside the particular assistance
+    permitted by Section 6.
+
+This definition applies to repository history, issues, discussions, comments
+and metadata only to the extent they form part of the Licensed Work and
+Licensor has the rights necessary to govern that use. It excludes permitted
+private AI assistance under Section 6, including its private retrieval and
+indexing. It also excludes operating Duravela to orchestrate AI or ML
+workloads using Your Materials or other materials You are entitled to use,
+without supplying the Licensed Work as model-development content. Testing
+the engine or a proposed patch with an AI-assisted tool is not, by itself,
+evaluation of the AI System for the purposes of this definition.
+
+"Your Materials" means Your software, configuration, tests, data,
+documentation and other materials, to the extent they do not contain Engine
+Expression copied or adapted from the Licensed Work. Merely interacting
+with the engine, implementing an interface, or embodying an unprotected
+idea does not make material Engine Expression.
+
+"Output" means a job result, action result, report, log, artifact, event,
+generated file or other output produced by running the Licensed Work.
+
+"Engine Contribution" means code, documentation or other material You
+intentionally submit to Licensor for inclusion in the Licensed Work and
+have authority to license. It excludes contributions to the Apache-licensed
+SDK or other separately licensed material, and communications clearly
+identified when submitted as not offered for inclusion. Material retains
+its existing rights if it is merely attached to illustrate a problem and
+is clearly identified as not offered for inclusion.
+
+3. Grant of rights
+
+Subject to this License, Licensor grants You a non-exclusive, worldwide,
+royalty-free, non-transferable and non-sublicensable license to:
+
+(a) read, inspect and evaluate the Licensed Work;
+
+(b) copy, build, run and use the Licensed Work for Permitted Internal Use;
+
+(c) modify the Licensed Work for Permitted Internal Use and the contribution
+    activities expressly permitted by Section 7;
+
+(d) make necessary private copies, including in source repositories,
+    package and container registries, artifact stores, CI/CD systems,
+    backup systems and deployment systems;
+
+(e) make those copies available to and permit use by Your Company's
+    employees, relevant group entities and Service Providers solely for
+    activities permitted to Your Company under this License; and
+
+(f) prepare and submit patches, pull requests, issues, bug reports and
+    other contributions, and conduct the related development, review and
+    testing authorized by Section 7.
+
+Recipients under Section 3(e) receive permission directly from Licensor
+solely for the relevant permitted work and must comply with the applicable
+terms. This permission is not a sublicense or an independent right to
+offer the engine. Your Company must limit access and copies to those
+needed for that work and require recipients acting on its behalf to observe
+the applicable restrictions.
+
+A Service Provider may charge for installing, configuring, modifying,
+integrating, securing, hosting or operating the engine on behalf of a
+customer exercising its own Permitted Internal Use rights. The provider
+may obtain or privately transfer necessary engine copies for that
+engagement, including installation in the customer's environment. This
+does not authorize supplying an engine appliance, packaged engine product
+or the provider's own general-purpose engine service. Payment for work,
+multiple customers and provider-owned infrastructure do not by themselves
+determine whether an engagement qualifies.
+
+The express permissions in Sections 3, 6 and 7 and the Permitted Internal
+Use definition take precedence over the redistribution and embedding
+restrictions in Section 5 for the activities they expressly authorize.
+Neither those permissions nor an application wrapper authorize an Engine
+Offering outside their stated scope.
+
+4. Your materials and outputs
+
+This License does not transfer ownership of Your Materials or Outputs to
+Licensor. It imposes no restriction on Your use, retention, modification,
+publication, distribution or commercial exploitation of Your Materials or
+Outputs to the extent they contain no Engine Expression. This includes
+factual test results, logs, measurements, benchmarks, validation and
+simulation results, and other factual or operational information.
+
+These protections do not depend on continued permission to operate the
+engine and remain effective after termination of this License. They do not
+excuse an unauthorized use of the engine that produced an Output or
+override rights in third-party materials, personal data or confidential
+information.
+
+To the extent an Output contains Engine Expression, only that portion
+remains subject to this License. An Output does not grant additional rights
+to distribute engine code or to operate the engine as an Engine Offering.
+Outputs consisting of separately licensed material retain their applicable
+separate terms.
+
+5. Restrictions and independent implementations
+
+Except as expressly permitted elsewhere in this License, under a separate
+applicable license, or by mandatory law, You may not do any of the following
+without a separate written commercial agreement from Licensor:
+
+(a) Commercially Redistribute the Licensed Work;
+
+(b) publish, distribute, sublicense or otherwise make available source
+    code, object code, binaries, packages, container images, modified
+    versions or derivative works of the Licensed Work to third parties,
+    whether paid or free, outside the permissions in Sections 3 and 7;
+
+(c) use, operate, provide or incorporate the Licensed Work or its
+    modifications as or as part of an Engine Offering;
+
+(d) supply a hosted or managed engine, general job execution, scheduling,
+    orchestration or worker service using the Licensed Work, outside
+    qualifying Service Provider work;
+
+(e) perform Product Embedding;
+
+(f) supply engine installation, integration, hosting, consulting or
+    operational services outside the Service Provider permission in
+    Section 3 where those services involve otherwise unauthorized use
+    or supply of the Licensed Work;
+
+(g) copy or adapt Engine Expression into a software implementation that
+    You supply or operate as an Engine Offering;
+
+(h) remove, obscure or misrepresent applicable copyright, license,
+    attribution, patent or other legal notices in retained Licensed Work;
+
+(i) circumvent or interfere with a technical control to obtain engine
+    functionality or a use that this License or Your separate applicable
+    agreement does not authorize;
+
+(j) use Licensor's names, trademarks, logos, domain names or product
+    identifiers except for truthful reference and attribution that does
+    not imply endorsement;
+
+(k) misrepresent the Licensed Work as open source or as licensed under
+    an OSI-approved license;
+
+(l) use the Licensed Work in violation of applicable law;
+
+(m) use output capture, instrumentation, traces or other analysis to copy
+    or adapt Engine Expression for an otherwise unauthorized Engine
+    Offering; or
+
+(n) knowingly authorize or assist a third party to perform an activity
+    prohibited to that party by this License.
+
+Restrictions concerning Engine Expression do not apply merely because
+independently written software provides similar functionality, implements
+an interface, interoperates with the engine, uses facts or unprotected
+ideas and principles, or was developed by someone who read documentation
+or lawfully studied the engine. Independent implementation does not require
+a commercial license solely for those reasons. This does not authorize
+copying protected expression, operating the actual Licensed Work as an
+Engine Offering, or using third-party material without its applicable
+permissions. Any patent rights remain subject to their applicable grants
+and to law.
+
+Section 5(i) does not prohibit disabling optional telemetry or diagnostics,
+making privacy or security changes, or adapting the engine for isolated
+deployment while remaining within the rights granted for the relevant
+version. A technical control does not itself reduce an express permission
+under this License. This paragraph does not authorize access to separately
+licensed features or circumvention of a valid restriction on an
+unauthorized use.
+
+6. AI assistance, model development and text-and-data mining
+
+6.1 Restricted model-development use
+
+This License grants no permission for AI Training Use. Subject to Section 1
+and any separate applicable rights, AI Training Use requires a separate
+written license from Licensor. You may not supply the Licensed Work to a
+provider on terms permitting that provider to use it for AI Training Use
+unless that use is independently authorized.
+
+6.2 Permitted private assistance
+
+You may use local or third-party AI-assisted tools to inspect, explain,
+summarize, search, privately index or embed, debug, modify, document, test
+or review the Licensed Work, including for security review, solely for
+Permitted Internal Use or the contribution activities in Section 7,
+provided that:
+
+(a) the Licensed Work and Engine Expression in prompts, private indexes
+    and generated material are not used for AI Training Use;
+
+(b) access is confined to You, authorized participants in that work, and
+    providers processing the material on Your behalf under contractual
+    or effective technical restrictions that prevent their independent
+    training, model improvement, dataset creation or reuse for other
+    customers;
+
+(c) provider retention is limited to processing necessary for the requested
+    assistance or storage solely for Your private account, tenant or
+    deployment, including its controlled backups, subject to the same
+    restrictions on access and reuse; and
+
+(d) Engine Expression is disclosed or distributed only through the private
+    access permitted by Section 3 or the contribution workflow in
+    Section 7.
+
+Confidential processing by a provider meeting these conditions is permitted
+disclosure, not prohibited redistribution. A provider acting for this
+purpose receives the limited direct permission in Section 3. Private
+retrieval, embeddings, inference, code completion and generation of fixes
+or tests under this subsection are not AI Training Use. The exception
+does not permit fine-tuning or other model-development use of engine
+materials merely because the model or deployment is private.
+
+An AI-assisted change may be submitted and displayed through an authorized
+contribution fork or pull request under Section 7. You remain responsible
+for having the rights necessary to submit it. This subsection grants no
+additional rights to operate an Engine Offering or publish engine code.
+
+6.3 Workloads and separate materials
+
+You may use Duravela for otherwise permitted AI or ML workloads, including
+scheduling training, evaluation and inference jobs, using Your Materials
+or other materials You are entitled to use. Running those jobs does not
+constitute AI Training Use of Duravela merely because Duravela executes or
+coordinates them. The engine's protected materials must not be supplied as
+model-development content without applicable permission. Ordinary factual
+Outputs remain governed by Section 4, and the SDK remains governed solely
+by its Apache License and applicable separate notices.
+
+6.4 Reservation and independent rights
+
+For purposes of Article 4(3) of Directive (EU) 2019/790, Section 44b(3) of
+the German Copyright Act, and analogous provisions that permit a rights
+reservation, Licensor reserves text-and-data-mining and AI Training Use
+rights in the Licensed Work to the extent those rights may lawfully be
+reserved. This reservation excludes activities expressly permitted by this
+License and does not restrict mandatory exceptions or separately granted
+rights. Its effect is subject to applicable requirements, including any
+requirement for a machine-readable reservation for online materials.
+
+This License does not revoke or amend a separate permission validly granted
+by the relevant rights holder to a repository host, platform or other
+party. No additional AI-training permission is granted by the public-fork
+permission in Section 7. Neither this paragraph nor a reference to a
+hosting service is a representation about the terms of any separate
+hosting agreement.
+
+7. Public contribution forks and incoming contributions
+
+7.1 Authorized source collaboration
+
+You may create and maintain a public source fork using the normal forking
+functionality of GitHub or another repository hosting service on which
+Licensor makes the Licensed Work available. For collaboration concerning
+the Licensed Work, You may create branches, modify source, develop and
+review patches, and submit pull requests or other Engine Contributions.
+You may expose the corresponding source and changes through that service,
+including its ordinary browsing, cloning and automatic source-archive
+functions, provided that the applicable license and notices are preserved.
+
+The authorized source disclosure is not prohibited merely because the
+fork is a separate repository or contains executable engine source. A
+patch does not have to be accepted, and a contribution fork does not have
+to be removed merely because a contribution is declined. This permission
+does not authorize establishing or marketing the fork as an independent
+engine product, release channel or Engine Offering.
+
+Recipients of source through an authorized fork may exercise applicable
+rights directly under this License; the fork owner does not sublicense
+the engine or grant broader rights.
+
+7.2 Builds, review and CI
+
+You may build and run the Licensed Work and proposed changes locally or
+through authorized CI and review providers for the activities in this
+Section. Necessary source and build copies may be made available privately
+to participants and providers for that review and testing under the
+applicable terms of this License. Test status, factual results and
+ordinary review comments may be public; code excerpts and patches may be
+displayed as part of the authorized source-review workflow.
+
+Engine binaries, packages, container images and other compiled engine
+artifacts must remain private to the authorized testing and review
+participants and providers. They must not be made publicly available as
+CI artifacts, release attachments or package or container registry entries,
+or otherwise supplied beyond those authorized recipients, without a separate
+written commercial agreement. Necessary private artifact and registry
+copies remain permitted under Sections 3 and 7. Automatic source archives
+of an authorized fork remain permitted under Section 7.1. Public operation
+of a demo or hosted engine is not authorized by this contribution exception.
+
+7.3 Contribution rights
+
+By intentionally submitting an Engine Contribution, You grant Licensor a
+non-exclusive, perpetual, worldwide, irrevocable, royalty-free, fully
+paid-up, transferable and sublicensable copyright license to use,
+reproduce, modify, prepare derivative works of, publish, display,
+distribute, commercially license and relicense that Engine Contribution
+as part of or in connection with the Licensed Work or a related product
+or service, including under proprietary, commercial or open source terms.
+This is a license, not an assignment of Your ownership.
+
+You also grant Licensor a non-exclusive, perpetual, worldwide,
+royalty-free, fully paid-up, transferable and irrevocable patent license,
+with the right to grant sublicenses, to make, have made, use, offer to sell,
+sell, import and otherwise transfer the Engine Contribution, alone or in
+combination with the Licensed Work to which it was submitted. This grant applies
+only to patent claims You are entitled to license that are necessarily
+infringed by the Engine Contribution alone or by that combination as
+submitted. It does not extend to claims infringed only by a later
+modification or a different combination.
+
+You represent that You have authority to grant these rights, including
+any required employer or other rights-holder authorization. You must
+identify included third-party materials and their applicable terms.
+Identifying those terms does not authorize Licensor to relicense that
+third-party material beyond the rights actually available. Licensor is
+not required to accept or use a contribution.
+
+7.4 SDK and other excluded contributions
+
+Section 7.3 applies only to Engine Contributions. Contributions solely to
+the Apache-licensed SDK follow its Apache License contribution terms,
+unless the contributor and Licensor expressly enter a separate agreement.
+Other separately licensed contributions retain their applicable terms.
+In a submission touching both the engine and SDK, each portion follows
+its applicable contribution terms; submission in one pull request does
+not expand the engine contribution grant to the SDK portions.
+
+8. Retained rights
+
+Licensor retains rights not granted by this License. This License does
+not transfer ownership of the Licensed Work or grant trademark,
+endorsement, brand or publicity rights beyond truthful reference and
+attribution expressly permitted by Section 5.
+
+No additional contractual permission is granted by implication. Nothing
+in this Section limits mandatory rights or rights available under
+another applicable license, including any exhaustion required by law.
+
+9. Patent rights granted to users
+
+Licensor grants You a non-exclusive, worldwide, royalty-free patent
+license under patent claims Licensor is entitled to license that are
+necessarily infringed by the Licensed Work as supplied by Licensor. The
+grant permits exercise of Your rights under Sections 3 and 7, including
+Permitted Internal Use and authorized development, review and testing.
+Permitted modifications are covered under those same patent claims; the
+grant does not extend to additional claims infringed only because of Your
+modifications or combinations with other material. Authorized Service
+Providers may exercise the patent rights needed for that work.
+
+No patent license is granted by this License for an Engine Offering,
+Product Embedding or redistribution outside the express permissions in
+this License. A separate commercial agreement must address patent rights
+for the uses it authorizes. The Apache License patent provisions govern
+the SDK independently.
+
+If You or Your Company initiate patent litigation, including a
+counterclaim or cross-claim, alleging that the Licensed Work or an Engine
+Contribution incorporated in it infringes a patent, the patent licenses
+granted to You under this Section terminate as of filing. This provision
+does not terminate the SDK's separate rights or itself terminate the
+copyright grant. The cure mechanism in Section 14 does not automatically
+reinstate patent rights terminated under this paragraph.
+
+10. Third-party materials and other grants
+
+Third-party software, libraries, packages, data, specifications and other
+materials retain their applicable separate licenses. This License does
+not reduce, replace or enlarge rights or obligations under those licenses.
+Lawfully licensable original Duravela additions may be subject to this
+License while retained upstream portions remain subject to their own
+terms. Applicable notices, attribution and other upstream conditions must
+be preserved as required by those terms.
+
+This License does not revoke, narrow or replace rights validly granted
+under another applicable license, including a license accompanying an
+earlier version of djob or Duravela. Such rights extend only to the
+material and uses covered by that grant, subject to its own terms.
+Nothing here validates a grant made without the necessary authority or
+extends an earlier grant to unrelated later additions.
+
+A separate commercial agreement with Licensor grants no greater rights
+in third-party material than Licensor is entitled to grant. Inclusion of
+material in this distribution is not a substitute for the applicable
+third-party permission.
+
+11. No automatic open source conversion
+
+This License does not require Licensor to release the Licensed Work under
+an open source license at any time. To the extent Licensor has the
+necessary rights, Licensor may release, dual-license, relicense or stop
+distributing some or all of the Licensed Work. That choice does not
+withdraw existing permissions validly granted for copies already received,
+subject to their applicable terms and termination provisions.
+
+12. Commercial licensing
+
+Activities requiring rights in the Licensed Work that are not granted
+by this License or otherwise independently available require a separate
+written commercial agreement with Licensor. This includes unauthorized
+engine redistribution, Product Embedding and Engine Offerings.
+
+Commercial approval must identify the authorized party, scope and agreed
+compensation or other participation terms. An electronic agreement is
+sufficient where the parties, terms and express assent are identifiable.
+There is no automatic revenue share, implied approval or approval by
+silence. Payment to a Service Provider does not constitute a commercial
+license from Licensor.
+
+Commercial licensing inquiries:
+https://github.com/duravela/djob
+
+A separate agreement overrides this License only for the parties,
+material and uses it expressly covers. The scope exclusions and Section 10
+continue to apply to separately licensed material.
+
+13. License versions
+
+Licensor may publish revised license versions. Copies received under a
+particular version remain governed by that version unless Licensor
+expressly offers another version for those copies and You elect to use
+that version. Publication of a revision, a name change or withdrawal of a
+download does not by itself amend or revoke an existing grant.
+
+Later source changes and releases may be offered under different terms.
+Permission for an earlier version does not automatically license those
+changes, and receiving a later release does not retroactively change the
+terms for an earlier copy. Section 10 preserves other valid grants.
+
+14. Breach, cure and termination
+
+14.1 Non-deliberate curable breaches
+
+For a non-deliberate breach of this License that is capable of remedy
+and is not a repeated breach covered by Section 14.2, You have thirty
+(30) days to remedy the breach after You become aware of it or receive
+notice identifying it, whichever occurs first. Your otherwise permitted
+rights remain in effect during that period. You must promptly stop the
+noncompliant activity and begin corrective action without undue delay.
+Compliant internal operations may continue during that period.
+The cure opportunity is not excluded solely because the breach concerns
+distribution, embedding, an Engine Offering, AI use or notices.
+
+During cure, You may not continue the prohibited activity, expand the
+unauthorized distribution or offering, or make further unauthorized
+disclosures. Corrective action includes restoring missing notices,
+ending unauthorized access or availability under Your control, and
+taking reasonable steps to request removal of unauthorized copies from
+recipients. Cure does not require a representation that already disclosed
+information can be made unknown. Whether an irreversible use can be
+remedied depends on its circumstances; written agreement with Licensor
+may be required where full remedy is not possible.
+
+If You fully remedy the breach within that period, Your rights continue
+without interruption. Otherwise, the rights granted under this License
+terminate at the end of the thirty-day period. If You fail to stop the
+noncompliant activity promptly or begin corrective action without undue
+delay, Licensor may terminate by notice before that period ends, subject
+to mandatory law. Licensor may agree in writing to additional time or a
+specified remedy.
+
+14.2 Other breaches
+
+For a deliberate breach, repetition of substantially the same breach
+after a previous cure under Section 14.1, or a breach not capable of
+remedy, Licensor may terminate this License by notice stating the grounds,
+subject to any mandatory notice, warning or cure requirements. Nothing
+permits prohibited use while a termination notice is pending. Mandatory
+rights to terminate for serious cause and remedies concerning unauthorized
+activity remain unaffected. Patent termination is governed separately by
+Section 9.
+
+14.3 Consequences and surviving rights
+
+After termination, You must stop activities requiring this License and
+delete or destroy copies held solely under it, including modified builds,
+except copies retained for legal, evidentiary or bona fide archival backup
+purposes. Retained copies may not be restored or used for engine operation
+without applicable permission. Reasonable ordinary backup-retention cycles
+may be used for inaccessible archival copies.
+
+Termination does not require destruction of Your Materials, factual
+Outputs or separately licensed material and does not terminate independent
+rights in those materials. Section 4 and valid contribution grants under
+Section 7 survive. Provisions concerning retained rights, accrued claims,
+warranty, liability and disputes survive to the extent relevant to their
+purpose. Cure preserves the license where stated; it does not waive claims
+arising from the breach. Reinstatement after termination requires Licensor's
+written consent unless mandatory law provides otherwise.
+
+15. Warranty and support
+
+The Licensed Work is made available royalty-free under this License,
+"as is" and "as available", without a contractual commitment to provide
+support, maintenance, updates, continued distribution or a service level.
+Except for express obligations in a separate applicable agreement and
+rights that cannot lawfully be excluded, Licensor gives no warranty or
+guarantee of fitness for a particular purpose, non-infringement, accuracy,
+completeness, availability, security, compatibility or absence of defects.
+
+Licensor does not promise that the Licensed Work or an Output will satisfy
+a particular law, regulation, standard, certification or customer contract.
+Mandatory defect remedies, liability for fraudulently concealed defects,
+and liability arising from an expressly assumed guarantee remain
+unaffected. All exclusions in this Section are subject to Section 18.
+
+16. Operational responsibility
+
+You are responsible for selecting and configuring the Licensed Work for
+Your use and for appropriate testing, validation, monitoring, backups,
+recovery procedures, access controls and safeguards. Validation of Outputs
+may be automated where appropriate; the measures must be proportionate to
+the intended use and its consequences. You are responsible for complying
+with the laws and third-party obligations applicable to Your activities.
+
+The Licensed Work does not replace independent engineering, security,
+compliance or professional judgment where that judgment is required. This
+allocation of operational responsibility does not release Licensor from
+liability preserved by Section 18 or impose responsibility on You for
+matters that mandatory law assigns to Licensor.
+
+17. Safety-related use
+
+The Licensed Work is general-purpose job execution, scheduling and
+orchestration software. This License supplies no safety certification or
+assurance of suitability as a safety-critical component. Use within an
+important business process is not prohibited merely because it is
+mission-critical, provided that the use otherwise complies with this
+License.
+
+For deployments where failure could cause death, personal injury or
+serious environmental or physical damage, You are responsible for
+determining whether applicable safety requirements are met and for
+providing necessary independent safeguards and approvals. This paragraph
+does not constitute certification, a warranty of fitness, or an exclusion
+of liability preserved by Section 18.
+
+18. Licensor's liability
+
+Nothing in this License excludes or limits liability for intentional
+misconduct, gross negligence, fraud or fraudulent concealment, injury
+to life, body or health, an expressly assumed guarantee to the extent
+that guarantee requires liability, mandatory product liability, or any
+other liability that applicable law does not permit to be excluded or
+limited.
+
+Subject to the preceding paragraph and any applicable statutory rules
+limiting liability for gratuitous provision, Licensor's liability for
+ordinary negligence is excluded except for breach of a material contractual
+obligation owed by Licensor. A material contractual obligation is an
+obligation whose performance is essential to the proper performance of
+this License and on whose performance You may ordinarily rely. Where
+Licensor's liability for such a breach applies, it is limited to damage
+foreseeable and typical for the agreement when it was made, to the extent
+such a limit is permitted by law.
+
+This Section does not create a guarantee, service level, duty or basis
+of liability that would not otherwise exist. Applicable statutory
+protections associated with gratuitous provision remain available. No
+fixed monetary cap or general exclusion of a category of loss overrides
+the liability preserved above. A separate commercial agreement may set
+its own lawful allocation of liability for the uses it covers.
+
+This Section governs all warranty, risk and responsibility provisions in
+this License, including Sections 15 through 17 and 19. To the extent
+permitted by law, its protections also apply to persons for whose acts
+Licensor is legally responsible.
+
+19. Export control and sanctions
+
+Each party remains responsible for the export-control, import-control,
+sanctions and trade obligations applicable to its own activities. You
+may not use, export, re-export, transfer or make available the Licensed
+Work in violation of applicable law. No provision transfers to You a
+legal obligation that cannot lawfully be transferred from Licensor.
+
+20. Governing law and jurisdiction
+
+This License is governed by the laws of the Federal Republic of Germany.
+The United Nations Convention on Contracts for the International Sale
+of Goods does not apply. This choice does not deprive a consumer of
+mandatory protections applicable in the absence of this choice, or
+exclude other overriding mandatory law.
+
+The courts of Berlin, Germany have exclusive jurisdiction where a
+pre-dispute jurisdiction agreement between the parties is valid under
+applicable law. This includes qualifying agreements between merchants
+(Kaufleute), legal persons under public law or public-law special funds
+where the applicable statutory requirements are met. It does not impose
+Berlin as the exclusive forum on a consumer or other person where such
+an agreement is not permitted. In those cases, statutory jurisdiction
+rules apply.
+
+21. Severability
+
+If a provision is ineffective, invalid or unenforceable, the remaining
+provisions continue to apply to the extent provided by law. The effect
+of the resulting gap is determined by applicable law, including any
+statutory rules that replace an ineffective standard term. Nothing in
+this Section requires a court to rewrite an invalid provision to
+preserve its maximum economic effect or prevents a consequence for the
+agreement as a whole that mandatory law requires.
+
+22. Entire agreement and priority
+
+This License states the agreement for rights granted under it, subject
+to a separate applicable agreement expressly made with Licensor. It does
+not supersede separate licenses for excluded material, other valid
+grants preserved by Section 10, or mandatory rights.
+
+An express permission takes precedence over a general restriction only
+within the scope of that permission. The scope exclusions, Section 1
+and Section 10 apply to every provision. Section 18 governs the liability
+consequences of the other provisions. A separate commercial agreement
+prevails only to the extent stated in Section 12.
+
+23. Notices
+
+Ordinary inquiries and requests may be submitted through:
+https://github.com/duravela/djob/issues
+
+Confidential licensing communications, breach notices and formal legal
+notices may be sent to a contact address designated by Licensor in the
+repository, project website or a separate agreement. Do not include
+confidential material in a public issue. A public issue is not a
+mandatory channel for formal notices; applicable legal requirements
+for form, service and receipt remain in effect.
+
+Licensor may update contact information without changing the substantive
+terms or version of this License.

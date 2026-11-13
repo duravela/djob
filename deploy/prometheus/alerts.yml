@@ -1,0 +1,72 @@
+groups:
+  - name: djob
+    rules:
+      - alert: DjobMemberUnavailable
+        expr: up{job="djob"} == 0
+        for: 5s
+        labels:
+          severity: critical
+        annotations:
+          summary: Djob member cannot be scraped
+          description: Check the process, API TLS, monitor credential and network. Preserve quorum during repair.
+      - alert: DjobStoragePressure
+        expr: djob_admission_state{state=~"storage_pressure|storage_exhausted"} == 1
+        for: 5s
+        labels:
+          severity: critical
+        annotations:
+          summary: Djob storage admission is held
+          description: Inspect storage-report and filesystem headroom. Retain verified backups before maintenance.
+      - alert: DjobClockHold
+        expr: djob_admission_clock_hold == 1
+        for: 5s
+        labels:
+          severity: critical
+        annotations:
+          summary: Djob requires clock repair
+          description: Stop the member, verify independent UTC and follow the clock-reset runbook.
+      - alert: DjobRecoveryHold
+        expr: djob_admission_recovery_hold == 1
+        for: 5s
+        labels:
+          severity: warning
+        annotations:
+          summary: Djob disaster recovery requires reconciliation
+          description: Keep producers stopped and follow the recovery-release runbook on every member.
+      - alert: DjobConsoleSessionCapacity
+        expr: |
+          ((djob_console_session_storage{kind="records"} / ignoring(kind) djob_console_session_storage{kind="record_limit"} > 0.9)
+          or (djob_console_session_storage{kind="ciphertext_bytes"} / ignoring(kind) djob_console_session_storage{kind="ciphertext_limit"} > 0.9))
+          and on(job, instance) (time() - djob_console_session_sample_timestamp_seconds < 30)
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: Console session storage approaches its configured capacity
+          description: Inspect retained sessions and ciphertext usage. Expired records are cleaned automatically; policy updates require a current revision and cannot shrink below retained usage.
+      - alert: DjobConsoleSessionThrottled
+        expr: |
+          (increase(djob_console_session_rejections_total{code="ResourceExhausted"}[5m]) > 20)
+          or (increase(djob_console_session_probe_rejections_total[5m]) > 20)
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: Console session requests are being throttled
+          description: Check browser polling and write rates, request sizes and retained session capacity before increasing limits.
+      - alert: DjobConsoleSessionCleanupFailing
+        expr: increase(djob_console_session_cleanup_failures_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: Console session cleanup is failing
+          description: Check controller quorum and clock health. Revoked records retain their tombstones until expiry; do not delete session buckets manually.
+      - alert: DjobConsoleSessionSamplesStale
+        expr: (time() - djob_console_session_sample_timestamp_seconds > 30) and on(job, instance) (djob_console_session_storage{kind="active"} == 1)
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: Console session storage observations are stale
+          description: Check the member's storage sampler and controller health before relying on cached capacity observations.

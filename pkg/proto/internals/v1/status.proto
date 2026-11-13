@@ -1,0 +1,24 @@
+// Copyright 2021 The Dapr Authors
+// SPDX-License-Identifier: Apache-2.0
+// Adapted from Dapr v1.16.0; packages, service selection and message fields modified
+// for djob. See licenses/Apache-2.0.txt and THIRD_PARTY_NOTICES.txt.
+
+syntax = "proto3";
+
+package proto.internals.v1;
+
+import "google/protobuf/any.proto";
+
+option go_package = "github.com/duravela/djob/pkg/proto/internals/v1;internals";
+
+// Status represents the response status for HTTP and gRPC app channel.
+message Status {
+  // Required. The status code
+  int32 code = 1;
+
+  // Error message
+  string message = 2;
+
+  // A list of messages that carry the error details
+  repeated google.protobuf.Any details = 3;
+}

@@ -1,0 +1,2 @@
+# Preserve this upstream license byte-for-byte, including its blank second line.
+licenses/MIT-rqlite.txt whitespace=-blank-at-eol

@@ -1,0 +1,121 @@
+name: Candidate qualification
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_run_id:
+        description: Successful Release candidate workflow run for this exact commit
+        required: true
+      version:
+        description: Candidate version in that run
+        required: true
+        default: v0.1.0-rc.13
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: candidate-qualification
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    env:
+      GOFLAGS: -p=2
+      GOMAXPROCS: '2'
+      DJOB_SOAK_DURATION: 2h
+      DJOB_SOAK_BATCH_SIZE: '8'
+      DJOB_SOAK_FAULT_EVERY: '10'
+      DJOB_SOAK_CYCLE_INTERVAL: 30s
+      DJOB_SOAK_HISTORY_WINDOW: 1m
+      DJOB_SOAK_COMPACT_CONFIGURATION_RECEIPTS: 'true'
+      DJOB_SOAK_GO_MEMORY_MIB: '256'
+      DJOB_SOAK_MAX_DATABASE_MIB: '192'
+      DJOB_SOAK_MAX_RSS_MIB: '512'
+      DJOB_SOAK_MAX_OPEN_FILES: '512'
+      DJOB_SOAK_MAX_LATENCY: 30s
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        with:
+          go-version: 1.27.4
+          cache-dependency-path: |
+            go.sum
+            **/go.sum
+      - name: Require successful test and candidate workflows on this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+          CANDIDATE_VERSION: ${{ inputs.version }}
+        run: |
+          test "$GITHUB_REF" = refs/heads/main
+          python3 - <<'PY'
+          import json, os, re, subprocess
+          run_id = os.environ['CANDIDATE_RUN_ID']
+          if not re.fullmatch(r'[0-9]+', run_id):
+              raise ValueError('candidate run ID must be numeric')
+          repo, revision = os.environ['GITHUB_REPOSITORY'], os.environ['GITHUB_SHA']
+          run = json.loads(subprocess.check_output(['gh', 'api', f'repos/{repo}/actions/runs/{run_id}']))
+          assert run['conclusion'] == 'success' and run['head_sha'] == revision and run['head_branch'] == 'main'
+          assert run['path'] == '.github/workflows/release-candidate.yml'
+          tests = json.loads(subprocess.check_output(['gh', 'run', 'list', '--workflow', 'Test', '--commit', revision, '--json', 'conclusion']))
+          assert any(r['conclusion'] == 'success' for r in tests)
+          subprocess.run(['gh', 'run', 'download', run_id, '--repo', repo, '--name', 'release-candidate-' + os.environ['CANDIDATE_VERSION'], '--dir', os.environ['RUNNER_TEMP'] + '/candidate'], check=True)
+          PY
+      - name: Record binary provenance and qualification environment
+        env:
+          DJOB_TEST_ARTIFACT_DIR: ${{ runner.temp }}/qualification
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+          CANDIDATE_VERSION: ${{ inputs.version }}
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, platform, shutil, subprocess
+          root = pathlib.Path(os.environ['RUNNER_TEMP'])
+          release, output = root / 'candidate/release', pathlib.Path(os.environ['DJOB_TEST_ARTIFACT_DIR'])
+          output.mkdir(mode=0o700)
+          manifest = json.loads((release / 'manifest.json').read_text())
+          assert manifest['revision'] == os.environ['GITHUB_SHA'] and manifest['source_clean'] is True
+          assert manifest['version'] == os.environ['CANDIDATE_VERSION']
+          for line in (release / 'SHA256SUMS').read_text().splitlines():
+              digest, name = line.split('  ', 1)
+              assert pathlib.Path(name).name == name
+              assert hashlib.sha256((release / name).read_bytes()).hexdigest() == digest
+          rehearsal = json.loads((root / 'candidate/deployment-rehearsal/deployment-rehearsal-report.json').read_text())
+          assert rehearsal['passed'] is True and rehearsal['release_manifest'] == manifest
+          recovery = json.loads((root / 'candidate/deployment-rehearsal/large-state-recovery-report.json').read_text())
+          assert recovery['passed'] is True and recovery['release_manifest'] == manifest
+          assert len(recovery['resources']) == 3 and len(recovery['verified']) == 3
+          shutil.copyfile(release / 'manifest.json', output / 'qualification-release-manifest.json')
+          shutil.copyfile(root / 'candidate/deployment-rehearsal/deployment-rehearsal-report.json', output / 'deployment-rehearsal-report.json')
+          shutil.copyfile(root / 'candidate/deployment-rehearsal/large-state-recovery-report.json', output / 'large-state-recovery-report.json')
+          environment = {'source_revision': os.environ['GITHUB_SHA'], 'release': manifest['version'], 'environment': 'GitHub-hosted ubuntu-latest, native Linux Docker', 'machine': platform.machine(), 'kernel': platform.release(), 'logical_cpus': os.cpu_count(), 'runner_image': os.getenv('ImageOS'), 'runner_image_version': os.getenv('ImageVersion'), 'docker_version': subprocess.check_output(['docker', 'info', '--format', '{{.ServerVersion}}'], text=True).strip(), 'workflow_run': os.environ['GITHUB_SERVER_URL'] + '/' + os.environ['GITHUB_REPOSITORY'] + '/actions/runs/' + os.environ['GITHUB_RUN_ID'], 'candidate_run_id': os.environ['CANDIDATE_RUN_ID'], 'simulator_revision': pathlib.Path('test/e2e/diorama-revision').read_text().strip(), 'configuration_environment': {k: v for k, v in os.environ.items() if k.startswith('DJOB_SOAK_')}, 'sampling_limitations': 'Approximately five-second PID 1 samples; long cycles and faults delay samples and unsampled peaks can be missed. Mosquitto is not included.', 'scope': 'Simulator pilot qualification; compare complete configuration and architecture. No physical gateway or unlimited-history capacity claim.'}
+          (output / 'qualification-environment.json').write_text(json.dumps(environment, indent=2) + '\n')
+          PY
+      - name: Qualify packaged controller and worker for two hours
+        env:
+          DJOB_E2E_RELEASE_DIR: ${{ runner.temp }}/candidate/release
+          DJOB_TEST_ARTIFACT_DIR: ${{ runner.temp }}/qualification
+        run: ./scripts/test-e2e.sh -v -run '^TestSimulatorSoak$' -timeout=2h10m 2>&1 | tee "$DJOB_TEST_ARTIFACT_DIR/qualification.log"
+      - name: Qualify parallel worker releases and console replacement
+        env:
+          DJOB_E2E_RELEASE_DIR: ${{ runner.temp }}/candidate/release
+          DJOB_TEST_ARTIFACT_DIR: ${{ runner.temp }}/qualification
+          DJOB_RELEASE_SOAK_DURATION: 2h
+        run: ./scripts/test-e2e.sh -v -run '^(TestManagedWorkerReleaseSoak|TestManagementConsoleSharedSessions)$' -timeout=2h20m 2>&1 | tee "$DJOB_TEST_ARTIFACT_DIR/release-qualification.log"
+      - name: Retain qualification evidence including failed runs
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: candidate-qualification-${{ inputs.version }}
+          path: ${{ runner.temp }}/qualification/*
+          if-no-files-found: error
+          retention-days: 60

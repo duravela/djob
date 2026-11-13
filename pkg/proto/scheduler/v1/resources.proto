@@ -1,0 +1,202 @@
+syntax = "proto3";
+
+package scheduler;
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/duravela/djob/pkg/proto/scheduler/v1;scheduler";
+
+// Retain both values and the complete request body for an uncertain retry.
+message CommandMetadata {
+  string request_id = 1;
+  google.protobuf.Timestamp at = 2;
+}
+
+message Channel {
+  string id = 1;
+  string gateway_id = 2;
+  string protocol = 3;
+  string endpoint = 4;
+  uint64 revision = 5;
+  uint64 epoch = 6;
+  string state = 7;
+  string owner_id = 8;
+  google.protobuf.Timestamp lease_until = 9;
+  string active_attempt_id = 10;
+  google.protobuf.Timestamp last_transition = 11;
+}
+
+message ConfigureChannelRequest {
+  CommandMetadata command = 1;
+  string id = 2;
+  string gateway_id = 3;
+  string protocol = 4;
+  string endpoint = 5;
+  uint64 expected_revision = 6;
+}
+message GetChannelRequest { string id = 1; }
+message ChannelResponse { Channel channel = 1; }
+message ListChannelsRequest { uint32 page_size = 1; string page_token = 2; }
+message ListChannelsResponse { repeated Channel channels = 1; string next_page_token = 2; }
+
+message ScheduleSpec {
+  // once, interval, or cron. Set only the fields belonging to this kind.
+  string kind = 1;
+  google.protobuf.Timestamp start_at = 2;
+  google.protobuf.Duration interval = 3;
+  string cron = 4;
+  string time_zone = 5;
+}
+message RetryPolicy {
+  // Includes the first attempt. Omit the policy to disable automatic retries.
+  uint32 max_attempts = 1;
+  google.protobuf.Duration initial_backoff = 2;
+  google.protobuf.Duration max_backoff = 3;
+}
+message ScheduleDefinition {
+  string id = 1;
+  string channel_id = 2;
+  string executor = 3;
+  bytes payload = 4;
+  ScheduleSpec spec = 5;
+  // Required: skip, coalesce, or replay.
+  string missed_policy = 6;
+  google.protobuf.Duration misfire_grace = 7;
+  uint32 catch_up_limit = 8;
+  bool paused = 9;
+  // Optional start deadline relative to each occurrence. Zero disables expiry.
+  google.protobuf.Duration start_window = 10;
+  RetryPolicy retry_policy = 11;
+}
+message Schedule {
+  ScheduleDefinition definition = 1;
+  uint64 revision = 2;
+  google.protobuf.Timestamp next_at = 3;
+  bool completed = 4;
+  google.protobuf.Timestamp last_transition = 5;
+  google.protobuf.Timestamp last_occurrence = 6;
+  google.protobuf.Timestamp skipped_through = 7;
+}
+message PutScheduleRequest {
+  CommandMetadata command = 1;
+  ScheduleDefinition definition = 2;
+  uint64 expected_revision = 3;
+}
+message PauseScheduleRequest {
+  CommandMetadata command = 1;
+  string id = 2;
+  uint64 expected_revision = 3;
+  bool paused = 4;
+}
+message GetScheduleRequest { string id = 1; }
+message ScheduleResponse { Schedule schedule = 1; }
+message ListSchedulesRequest { uint32 page_size = 1; string page_token = 2; }
+message ListSchedulesResponse { repeated Schedule schedules = 1; string next_page_token = 2; }
+
+message Run {
+  string id = 1;
+  string channel_id = 2;
+  string executor = 3;
+  bytes payload = 4;
+  string state = 5;
+  uint64 attempt_count = 6;
+  string active_attempt_id = 7;
+  string last_attempt_id = 8;
+  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp last_transition = 10;
+  string schedule_id = 11;
+  uint64 schedule_revision = 12;
+  google.protobuf.Timestamp scheduled_at = 13;
+  bool cancel_requested = 14;
+  google.protobuf.Timestamp cancel_requested_at = 15;
+  string cancel_request_id = 16;
+  string cancel_reason = 17;
+  // An exchange must begin before this instant. Active exchanges keep running.
+  google.protobuf.Timestamp start_deadline = 18;
+  RetryPolicy retry_policy = 19;
+  google.protobuf.Timestamp retry_at = 20;
+}
+message CreateRunRequest {
+  CommandMetadata command = 1;
+  string id = 2;
+  string channel_id = 3;
+  string executor = 4;
+  bytes payload = 5;
+  google.protobuf.Timestamp start_deadline = 6;
+  RetryPolicy retry_policy = 7;
+}
+message GetRunRequest { string id = 1; }
+// Acknowledges durable intent. A running exchange can still finish successfully
+// or have an unknown effect; inspect Run and Attempt for the eventual outcome.
+message CancelRunRequest {
+  CommandMetadata command = 1;
+  string id = 2;
+  string reason = 3;
+}
+message RunResponse { Run run = 1; }
+message ListRunsRequest { uint32 page_size = 1; string page_token = 2; }
+message ListRunsResponse { repeated Run runs = 1; string next_page_token = 2; }
+
+// Claim tokens are private execution capabilities and are never returned here.
+message Attempt {
+  string id = 1;
+  string run_id = 2;
+  uint64 number = 3;
+  string owner_id = 4;
+  uint64 epoch = 5;
+  google.protobuf.Timestamp started_at = 6;
+  google.protobuf.Timestamp finished_at = 7;
+  string outcome = 8;
+  bytes result = 9;
+  string error = 10;
+  bool quiescent = 11;
+  google.protobuf.Timestamp authorized_at = 12;
+  // The owner confirms that it never called the gateway Exchange method.
+  bool no_delivery = 13;
+  // not_sent: adapter attests a transient failure before any request bytes.
+  string retry_class = 14;
+  // Planned retry time, retained after promotion for audit.
+  google.protobuf.Timestamp retry_at = 15;
+}
+message GetAttemptRequest { string id = 1; }
+message AttemptResponse { Attempt attempt = 1; }
+
+// Expiry only revokes logical ownership and blocks the gateway. It cannot grant
+// another worker permission to use the physical bus.
+message ExpireChannelRequest {
+  CommandMetadata command = 1;
+  string id = 2;
+  uint64 expected_epoch = 3;
+}
+// Actor identity is derived from the authenticated operator credential.
+message ResolveChannelRequest {
+  CommandMetadata command = 1;
+  string id = 2;
+  uint64 expected_epoch = 3;
+  string reason = 4;
+  // The operator attests that previous physical access has ended.
+  bool quiescent = 5;
+}
+message ResolveRunRequest {
+  CommandMetadata command = 1;
+  string id = 2;
+  string attempt_id = 3;
+  // succeeded, failed, or ready. Ready explicitly authorizes another attempt.
+  string state = 4;
+  string reason = 5;
+}
+message Resolution {
+  string request_id = 1;
+  string channel_id = 2;
+  string run_id = 3;
+  string attempt_id = 4;
+  uint64 epoch = 5;
+  string run_state = 6;
+  google.protobuf.Timestamp at = 7;
+  string actor = 8;
+  string reason = 9;
+  bool quiescent = 10;
+}
+message GetResolutionRequest { string request_id = 1; }
+message ResolutionResponse { Resolution resolution = 1; }

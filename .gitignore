@@ -1,0 +1,11 @@
+.vscode
+
+**/snap-*
+**/wal-*
+
+tmp/
+/private-api/
+/test/console/node_modules/
+
+__pycache__/
+*.pyc

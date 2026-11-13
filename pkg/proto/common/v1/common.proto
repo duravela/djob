@@ -1,0 +1,55 @@
+// Copyright 2021 The Dapr Authors
+// SPDX-License-Identifier: Apache-2.0
+// Adapted from Dapr v1.16.0; packages, service selection and message fields modified
+// for djob. See licenses/Apache-2.0.txt and THIRD_PARTY_NOTICES.txt.
+
+syntax = "proto3";
+
+package common;
+
+import "google/protobuf/any.proto";
+import "google/protobuf/duration.proto";
+
+option go_package = "github.com/duravela/djob/pkg/proto/common/v1;common";
+
+// InvokeRequest is the message to invoke a method with the data.
+message InvokeRequest {
+  // Required. method is a method name which will be invoked by caller.
+  string method = 1;
+
+  // Required in unary RPCs. Bytes value or Protobuf message which caller sent.
+  // Dapr treats Any.value as bytes type if Any.type_url is unset.
+  google.protobuf.Any data = 2;
+}
+
+// InvokeResponse is the response message including data and its content type
+// from app callback.
+message InvokeResponse {
+  // Required in unary RPCs.
+  google.protobuf.Any data = 1;
+
+  // Required. The type of data content.
+  string content_type = 2;
+}
+
+// JobFailurePolicy defines the policy to apply when a job fails to trigger.
+message JobFailurePolicy {
+  // policy is the policy to apply when a job fails to trigger.
+  oneof policy {
+    JobFailurePolicyDrop drop = 1;
+    JobFailurePolicyConstant constant = 2;
+  }
+}
+
+// JobFailurePolicyDrop is a policy which drops the job tick when the job fails to trigger.
+message JobFailurePolicyDrop {}
+
+// JobFailurePolicyConstant is a policy which retries the job at a consistent interval when the job fails to trigger.
+message JobFailurePolicyConstant {
+  // interval is the constant delay to wait before retrying the job.
+  google.protobuf.Duration interval = 1;
+
+  // max_retries is the optional maximum number of retries to attempt before giving up.
+  // If unset, the Job will be retried indefinitely.
+  optional uint32 max_retries = 2;
+}

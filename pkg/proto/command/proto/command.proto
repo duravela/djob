@@ -1,0 +1,103 @@
+syntax = "proto3";
+
+package proto;
+import "google/protobuf/timestamp.proto";
+option go_package = "djob/command/proto";
+
+message Command {
+    enum Type {
+        COMMAND_TYPE_UNKNOWN = 0;
+        COMMAND_TYPE_GET_NODE_META = 1;
+        COMMAND_TYPE_ASSIGN_JOBS = 2;
+        COMMAND_TYPE_ADD_JOBS = 3;
+        COMMAND_TYPE_REMOVE_JOBS = 4;
+        COMMAND_TYPE_GET_JOB_RESULTS = 5;
+
+        COMMAND_TYPE_NOTIFY = 6;
+    }
+    Type type = 1;
+
+    oneof request {
+        AssignJobsRequest assign_jobs = 2;
+        AddJobsRequest add_jobs = 3;
+        CommandRemoveJobsRequest remove_jobs = 4;
+        CommandGetJobResultsRequest get_job_results = 5;
+
+        CommandNotifyRequest notify_request = 6;
+    }
+}
+
+message Job {
+  string id = 1;
+  string data = 2;
+  google.protobuf.Timestamp deadline = 3;
+  optional int32 priority = 4; // Optional: default to 0 when unset
+}
+
+message JobReport {
+  string job_id = 1;
+  string group = 2;
+  string worker_id = 3;
+  string status = 4;
+  google.protobuf.Timestamp started_at = 5;
+  google.protobuf.Timestamp finished_at = 6;
+  bytes output = 7;
+  string error = 8;
+}
+// AssignJobsRequest is sent by the controller to assign jobs to a worker node.
+message AssignJobsRequest {
+  string worker_id = 1;
+  repeated string job_ids = 2;
+}
+
+// AssignJobsSuccess is returned by the worker node after attempting to accept the jobs.
+message AssignJobsSuccess {
+  bool accepted = 1; // Always true for now
+}
+
+message AssignJobsError {
+  string message = 1;
+}
+
+message AssignJobsResponse {
+  oneof result {
+    AssignJobsSuccess success = 1;
+    AssignJobsError error = 2;
+  }
+}
+
+// AddJobsRequest is sent by the controller to register jobs that wil be synchronized among worker nodes
+message AddJobsRequest {
+  repeated Job jobs = 1;
+}
+
+message AddJobsResponse {
+  repeated string accepted_job_ids = 1;
+  repeated string failed_job_ids = 2;
+  // A request-level failure, such as an unavailable Raft proposal.
+  string error = 3;
+}
+
+message CommandRemoveJobsRequest {
+  repeated string job_ids = 1;
+}
+
+message CommandRemoveJobsResponse {
+  bool accepted = 1; // Always true for now
+}
+
+message CommandGetJobResultsRequest {
+}
+
+message CommandGetJobResultsResponse {
+  repeated JobReport job_reports = 1;
+}
+
+message CommandNotifyRequest {
+	string id = 1;
+	string address = 2;
+}
+
+message CommandNotifyResponse {
+    string error = 1;
+}

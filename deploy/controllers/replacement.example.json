@@ -1,0 +1,13 @@
+{
+  "apiVersion": "v1", "kind": "List", "items": [
+    {"apiVersion": "v1", "kind": "PersistentVolumeClaim", "metadata": {"namespace": "djob-controllers", "name": "member-4-data"}, "spec": {"accessModes": ["ReadWriteOnce"], "resources": {"requests": {"storage": "20Gi"}}}},
+    {"apiVersion": "apps/v1", "kind": "Deployment", "metadata": {"namespace": "djob-controllers", "name": "member-4"}, "spec": {
+      "replicas": 1, "strategy": {"type": "Recreate"}, "selector": {"matchLabels": {"djob-member": "4"}},
+      "template": {"metadata": {"labels": {"djob-member": "4"}}, "spec": {
+        "containers": [{"name": "djob", "image": "registry.example/djob@sha256:REPLACE_WITH_64_HEX_DIGEST", "args": ["--id", "4", "--dynamic-membership", "--join", "--initial-members", "1,2,3", "--data-dir", "/data", "--peers", "https://member-1:9021,https://member-2:9021,https://member-3:9021,https://member-4:9021", "--raft-tls-ca", "/tls/ca.pem", "--raft-tls-cert", "/tls/cert.pem", "--raft-tls-key", "/tls/key.pem", "--grpc", ":10987", "--http", ":8080"],
+          "volumeMounts": [{"name": "data", "mountPath": "/data"}, {"name": "tls", "mountPath": "/tls", "readOnly": true}]}],
+        "volumes": [{"name": "data", "persistentVolumeClaim": {"claimName": "member-4-data"}}, {"name": "tls", "secret": {"secretName": "member-4-peer-tls"}}]
+      }}
+    }}
+  ]
+}

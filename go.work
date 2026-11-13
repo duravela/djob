@@ -1,0 +1,12 @@
+go 1.26.0
+
+use (
+	.
+	./examples/company-node
+	./examples/company-worker
+	./sdk/go
+)
+
+replace github.com/duravela/djob v0.1.0-rc.13 => .
+
+replace github.com/duravela/djob/sdk/go v0.1.0-rc.3 => ./sdk/go

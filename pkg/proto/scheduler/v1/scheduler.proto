@@ -1,0 +1,150 @@
+// Portions Copyright 2021 The Dapr Authors
+// Legacy job/invocation schema portions derive from Dapr under Apache-2.0.
+// Modified for djob; subsequent durable scheduling messages use the root LICENSE.
+// See licenses/Apache-2.0.txt and THIRD_PARTY_NOTICES.txt.
+
+syntax = "proto3";
+
+package scheduler;
+
+import "google/protobuf/any.proto";
+import "common/v1/common.proto";
+import "google/protobuf/timestamp.proto";
+import "scheduler/v1/resources.proto";
+
+option go_package = "github.com/duravela/djob/pkg/proto/scheduler/v1;scheduler";
+
+service Scheduler {
+    // ScheduleJob is used to schedule a job.
+    rpc ScheduleJob(ScheduleJobRequest) returns (ScheduleJobResponse) {}
+    // Get a job
+    rpc GetJob(GetJobRequest) returns (GetJobResponse) {}
+    // DeleteJob is used to delete a job.
+    rpc DeleteJob(DeleteJobRequest) returns (DeleteJobResponse) {}
+    // ListJobs is used to list all jobs.
+    rpc ListJobs(ListJobsRequest) returns (ListJobsResponse) {}
+
+    rpc ConfigureChannel(ConfigureChannelRequest) returns (ChannelResponse) {}
+    rpc GetChannel(GetChannelRequest) returns (ChannelResponse) {}
+    rpc ListChannels(ListChannelsRequest) returns (ListChannelsResponse) {}
+    rpc PutSchedule(PutScheduleRequest) returns (ScheduleResponse) {}
+    rpc PauseSchedule(PauseScheduleRequest) returns (ScheduleResponse) {}
+    rpc GetSchedule(GetScheduleRequest) returns (ScheduleResponse) {}
+    rpc ListSchedules(ListSchedulesRequest) returns (ListSchedulesResponse) {}
+    rpc CreateRun(CreateRunRequest) returns (RunResponse) {}
+    rpc CancelRun(CancelRunRequest) returns (RunResponse) {}
+    rpc GetRun(GetRunRequest) returns (RunResponse) {}
+    rpc ListRuns(ListRunsRequest) returns (ListRunsResponse) {}
+    rpc GetAttempt(GetAttemptRequest) returns (AttemptResponse) {}
+    // Operator-only recovery. Expiry blocks access; it does not prove quiescence.
+    rpc ExpireChannel(ExpireChannelRequest) returns (ChannelResponse) {}
+    rpc ResolveChannel(ResolveChannelRequest) returns (ChannelResponse) {}
+    rpc ResolveRun(ResolveRunRequest) returns (RunResponse) {}
+    rpc GetResolution(GetResolutionRequest) returns (ResolutionResponse) {}
+}
+
+message Job {
+  // The schedule for the job.
+  optional string schedule = 1;
+
+  // Optional: jobs with fixed repeat counts.
+  optional uint32 repeats = 2;
+
+  // Optional: sets time at which or time interval before the callback is invoked for the first time.
+  optional string due_time = 3;
+
+  // Optional: Time To Live to allow for auto deletes.
+  optional string ttl = 4;
+
+  // Job data.
+  google.protobuf.Any data = 5;
+
+  // failure_policy is the optional policy to apply when a job fails to
+  // trigger.
+  // By default, the failure policy is FailurePolicyConstant with a 1s interval
+  // and 3 maximum retries.
+  optional common.JobFailurePolicy failure_policy = 6;
+
+  // Durable definition. Legacy string timing and failure-policy fields above
+  // remain on the wire but are not interpreted by the durable scheduler.
+  ScheduleDefinition definition = 7;
+}
+
+message ScheduleJobRequest {
+  // name is the name of the job to create.
+  string name = 1;
+
+  // The job to be scheduled.
+  Job job = 2;
+
+  // The metadata associated with the job.
+  JobMetadata metadata = 3;
+}
+
+message ScheduleJobResponse {
+  Schedule schedule = 1;
+}
+
+// GetJobRequest is the message used to delete or get a job.
+message GetJobRequest {
+  // name is the name of the job.
+  string name = 1;
+
+  // The metadata associated with the job.
+  JobMetadata metadata = 2;
+}
+
+// GetJobResponse is the response message to convey the details of a job.
+message GetJobResponse {
+  // The job to be scheduled.
+  Job job = 1;
+  Schedule schedule = 2;
+}
+
+// DeleteJobRequest is the message used to delete or get a job.
+message DeleteJobRequest {
+  string name = 1;
+
+  // The metadata associated with the job.
+  JobMetadata metadata = 2;
+}
+
+// DeleteJobRequest is the response message used to delete or get a job.
+message DeleteJobResponse {
+  // Empty
+}
+
+// NamedJob is a job with a name.
+message NamedJob {
+ // name is the name of the job.
+  string name = 1;
+
+  // The metadata associated with the job.
+  JobMetadata metadata = 2;
+
+  // The job scheduled.
+  Job job = 3;
+}
+
+// ListJobsRequest is the message used to list all jobs.
+message ListJobsRequest {
+  // The metadata associated with the job.
+  JobMetadata metadata = 1;
+  uint32 page_size = 2;
+  string page_token = 3;
+}
+
+// ListJobsResponse is the response message to convey the details of a job.
+message ListJobsResponse {
+  // The list of jobs.
+  repeated NamedJob jobs = 1;
+  string next_page_token = 2;
+}
+
+// JobMetadata is the message used to schedule/get/delete a
+// job.
+message JobMetadata {
+  string request_id = 1;
+  google.protobuf.Timestamp at = 2;
+  uint64 expected_revision = 3;
+}

@@ -1,0 +1,109 @@
+djob third-party materials and licensing scope
+
+The root LICENSE applies only to material Sebastian Kaiser owns or controls.
+It does not relicense upstream code or restrict rights granted by separately
+licensed files. The entire sdk/go directory retains Apache 2.0 and its NOTICE.
+Source and binary distributions must preserve the notices and grants below.
+
+CockroachDB configuration and server scaffolding
+-----------------------------------------------
+Portions Copyright 2014, 2015 The Cockroach Authors.
+
+Older configuration, server-construction and service-registration scaffolding in
+pkg/base/config.go, pkg/server/config.go, pkg/server/server.go,
+pkg/server/grpc_server.go and pkg/server/scheduler.go corresponds to CockroachDB
+23.1.0, revision 358e0d87912365b8976c55ab9b3292e999cf720d. The scheduler's
+registration scaffolding corresponds to upstream pkg/server/admin.go.
+
+That release's BSL Change Date is 2026-04-01 and its Change License is Apache
+License 2.0. As of this review on 2026-11-13, the identified older portions are
+used under that Apache grant. The original root license statement and BSL
+parameters are preserved in licenses/CockroachDB-23.1-LICENSE.txt and
+licenses/CockroachDB-23.1-BSL.txt. The Apache text is licenses/Apache-2.0.txt.
+These filenames map the upstream LICENSE, licenses/BSL.txt and licenses/APL.txt;
+the upstream statement is historical evidence, not djob's overall license.
+No upstream root NOTICE file was present at that revision. Files are marked as
+modified. New djob engine behavior retains the root engine license.
+
+This older grant is not applied to later CockroachDB additions. The later
+utility, test-wrapper and RPC implementations identified in the initial screen
+were removed or replaced with smaller djob compatibility adapters. Leak tests
+now use the Apache-licensed go.uber.org/goleak dependency. The checked-in
+compatibility adapters carrying Apache-2.0 notices retain that separate license.
+No clean-room claim or permission for removed later code is asserted.
+
+rqlite TCP helpers and fatih/pool
+-------------------------------
+Portions Copyright (c) Philip O'Toole 2015 - 2024.
+Copyright (c) 2013 Fatih Arslan.
+
+pkg/tcp/dialer.go, dialer_test.go, mux.go, mux_test.go and
+internal/store/transport.go include modified rqlite code. The comparison source
+is rqlite/rqlite v8.36.5, revision
+5bd095af56c904ea270315f3d0d9b182516db5f0. Its MIT grant and copyright are
+preserved in licenses/MIT-rqlite.txt. pkg/tcp/pool is adapted from rqlite's
+fatih/pool fork, whose additional MIT license is licenses/MIT-fatih-pool.txt.
+Preserve both notices. Djob-specific listener shutdown tests are first-party.
+The legacy client/service and framing scaffolding in pkg/client/client.go,
+pkg/apiserver/service.go and pkg/util/tcputil/tcp.go also derives from that
+release's cluster/client.go and cluster/service.go. Package NOTICE.txt files
+identify these portions. The same full MIT grant and copyright apply; djob's
+job/command-specific implementation retains the engine terms.
+
+etcd Raft example
+----------------
+Portions Copyright 2015 The etcd Authors.
+
+pkg/node/raft_node.go includes extensively modified WAL, snapshot, transport
+and Ready-loop scaffolding from etcd contrib/raftexample/raft.go. The comparison
+source is etcd-io/etcd v3.5.17, revision
+507c0de87bd5034e3de4ab76ebf96b54dae0cd52, under Apache 2.0. The license is
+licenses/Apache-2.0.txt. Djob's subsequent engine implementation retains the
+root engine license; the upstream portions retain their Apache rights.
+
+Dapr legacy protobuf schemas and generated bindings
+--------------------------------------------------
+Copyright 2021 The Dapr Authors.
+
+pkg/proto/common/v1/common.proto, runtime/v1/admin.proto and
+internals/v1/status.proto are modified subsets of Dapr schemas. Legacy job
+messages and service scaffolding in pkg/proto/scheduler/v1/scheduler.proto also
+include Dapr portions. Their generated Go/gRPC/gateway bindings carry the same
+attribution; generated bodies were not changed by this attribution restoration.
+The comparison source is dapr/dapr v1.16.0, revision
+b68296042c975d4ede1ed93ec6b0a579c2b6a020. The common/runtime/internals/scheduler
+schema paths and hashes are recorded in the integrity baseline. Dapr's grant is Apache
+2.0, supplied in licenses/Apache-2.0.txt; no root NOTICE file was present at that
+revision. Message/package/service adaptations are marked in source. New durable
+scheduling implementation retains the root license; the copied schema portions
+and their generated representation retain their Apache rights.
+
+Source review and historical copies
+-----------------------------------
+licenses/source-integrity.json records path hashes and removal requirements for
+reviewed source. scripts/check_provenance.py detects drift from that baseline.
+Source headers, package notices and the grants above identify retained upstream
+portions. Detailed engineering review records remain private; integrity checks
+are not a legal opinion or proof of originality of every file.
+
+The unused copied consistenthash package, tests and README were removed.
+
+The original private Git history, old tags and release assets are not cleared by
+these current-tree changes. Publication uses a fresh-root export of reviewed
+current source, with original private history kept private. Never make the old
+repository public or push its historical refs/assets as part of that export.
+The export does not revoke any rights previously granted in older versions.
+
+Dependencies and binary archives
+--------------------------------
+Go and JavaScript dependencies retain their own licenses and copyrights. Pinned
+manifests include go.mod/go.sum, sdk/go/go.mod/go.sum and browser test manifests.
+Release builds collect the Go toolchain license and licenses/notices of modules
+actually compiled into their commands in DEPENDENCY_LICENSES.txt. The Go license
+is also supplied in licenses/BSD-golang.txt. Test tooling is not an engine grant.
+
+Binary archives carry this notice, the root LICENSE, COMMERCIAL.md, SDK license
+and notice, and all license files named above, with hashes in the manifest.
+Missing or altered notices fail release staging. Discovery and integrity checks
+do not replace review of license compatibility, ownership or the custom engine
+terms. External legal review of the engine terms remains pending.

@@ -1,0 +1,44 @@
+# Opt in namespaces with djob.dev/immutable-release-configs=true. Mark only
+# versioned release configuration Secrets with djob.dev/release-config=true.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: djob-immutable-release-config
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    namespaceSelector:
+      matchLabels:
+        djob.dev/immutable-release-configs: "true"
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE", "DELETE"]
+        resources: ["secrets"]
+  matchConditions:
+    - name: release-config
+      expression: >-
+        (object != null && has(object.metadata.labels) &&
+         'djob.dev/release-config' in object.metadata.labels &&
+         object.metadata.labels['djob.dev/release-config'] == 'true') ||
+        (oldObject != null && has(oldObject.metadata.labels) &&
+         'djob.dev/release-config' in oldObject.metadata.labels &&
+         oldObject.metadata.labels['djob.dev/release-config'] == 'true')
+  validations:
+    - expression: request.operation != 'DELETE'
+      message: Published configuration names cannot be deleted or replaced; use a new versioned Secret.
+    - expression: >-
+        request.operation == 'DELETE' ||
+        (has(object.immutable) && object.immutable &&
+         has(object.metadata.labels) &&
+         'djob.dev/release-config' in object.metadata.labels &&
+         object.metadata.labels['djob.dev/release-config'] == 'true')
+      message: Release configuration Secrets must remain immutable and retain their protection label.
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: djob-immutable-release-config
+spec:
+  policyName: djob-immutable-release-config
+  validationActions: [Deny]

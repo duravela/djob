@@ -1,0 +1,95 @@
+name: Release candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Immutable candidate version (v prefix)
+        required: true
+        default: v0.1.0-rc.13
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: release-candidate
+  cancel-in-progress: false
+
+jobs:
+  candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      GOFLAGS: -p=2
+      GOMAXPROCS: '2'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        with:
+          go-version: 1.27.4
+          cache-dependency-path: |
+            go.sum
+            **/go.sum
+      - name: Require the full test workflow to have passed on this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          test "$GITHUB_REF" = refs/heads/main
+          gh run list --workflow Test --commit "$GITHUB_SHA" --json conclusion --jq 'any(.[]; .conclusion == "success")' | grep -qx true
+      - name: Test release toolchain selection and manifest checks
+        run: python3 -m unittest discover -s scripts -p '*_test.py'
+      - name: Check reviewed source dispositions and upstream notices
+        run: python3 scripts/check_provenance.py
+      - name: Build immutable release archives
+        env:
+          CANDIDATE_VERSION: ${{ inputs.version }}
+        run: ./scripts/build-release.sh --version "$CANDIDATE_VERSION" --output "$RUNNER_TEMP/release"
+      - name: Verify reproducibility of both target archives
+        env:
+          CANDIDATE_VERSION: ${{ inputs.version }}
+        run: |
+          ./scripts/build-release.sh --version "$CANDIDATE_VERSION" --output "$RUNNER_TEMP/repeat"
+          diff -r "$RUNNER_TEMP/release" "$RUNNER_TEMP/repeat"
+      - name: Scan the packaged executables
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
+          mkdir "$RUNNER_TEMP/binary-scan"
+          for target in amd64 arm64; do
+            tar -xzf "$RUNNER_TEMP/release/"*"_linux_$target.tar.gz" -C "$RUNNER_TEMP/binary-scan"
+            govulncheck -mode=binary "$RUNNER_TEMP/binary-scan/djob"
+            govulncheck -mode=binary "$RUNNER_TEMP/binary-scan/djob-worker"
+            govulncheck -mode=binary "$RUNNER_TEMP/binary-scan/djob-console"
+          done
+      - name: Enable bridge netfilter for nested Kubernetes
+        run: |
+          sudo modprobe br_netfilter
+          sudo sysctl -w net.bridge.bridge-nf-call-iptables=1
+      - name: Rehearse packaged deployments, managed workers and large-state recovery
+        env:
+          DJOB_E2E_RELEASE_DIR: ${{ runner.temp }}/release
+          DJOB_TEST_ARTIFACT_DIR: ${{ runner.temp }}/deployment-rehearsal
+        run: ./scripts/test-e2e.sh -v -run '^Test(DeploymentRehearsal|LargeSnapshotRecovery|ManagementConsole|ManagementConsoleSharedSessions|ConsoleDeploymentManifest|ManagedWorkersOnKubernetes|ManagedWorkerReleasesOnKubernetes|ManagedMQTTWorkerOnKubernetes|ManagedWorkerCatalogOnKubernetes|ManagedWorkerPlatformConfigurationOnKubernetes|ManagedWorkerPoolsOnKubernetes)$' -timeout=20m
+      - name: Retain immutable candidate binaries and evidence
+        # IBSA 1.1 section 7.2 permits private fork CI builds, not public binaries.
+        if: ${{ always() && (github.repository == 'duravela/djob' || github.repository == 'sekaiser/djob') }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: release-candidate-${{ inputs.version }}
+          path: |
+            ${{ runner.temp }}/release/*
+            ${{ runner.temp }}/deployment-rehearsal/deployment-rehearsal-report.json
+            ${{ runner.temp }}/deployment-rehearsal/large-state-recovery-report.json
+          if-no-files-found: error
+          retention-days: 60
+      - name: Retain rehearsal logs on failure
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: deployment-rehearsal-logs
+          path: ${{ runner.temp }}/deployment-rehearsal/*.log
+          if-no-files-found: ignore
+          retention-days: 7

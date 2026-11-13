@@ -1,0 +1,88 @@
+version: gateway-sim.v0.7
+
+simulation:
+  seed: 42
+  timeMode: realtime
+
+mqtt:
+  brokerUrl: tcp://mqtt-broker:1883
+  clientIdPrefix: diorama
+  sessionMode: perGatewayClient
+
+runtime:
+  sqlite:
+    enabled: false
+    path: /state.db
+  mailbox:
+    gatewayCapacity: 1024
+    tellTimeout: 5s
+    overflowPolicy: traceAndDrop
+  lifecycle:
+    rebootDisconnectDelay: 1s
+    rebootDuration: 10s
+  control:
+    allowOfflineReboot: false
+
+templates:
+  deviceListResponse:
+    encoding: json
+    content: |
+      {"operation":"list","resource":"devices","status":"ok","items":[{{- range $i, $d := .Devices -}}{{- if $i }},{{ end -}}{"manufacturer":{{ json $d.Manufacturer }},"serialNumber":{{ json $d.SerialNumber }},"deviceType":{{ json $d.DeviceType }},"version":{{ $d.Version }}}{{- end -}}]}
+
+gateways:
+  - id: "gw-alpha-001"
+    profile: virtual-gateway@mvp
+    lifecycle:
+      initialState: online
+    topics:
+      modern: true
+      legacy: false
+
+devices:
+  - id: meter-alpha-001
+    protocol: meter-radio
+    link:
+      duplex: half
+      turnaroundTime: 50ms
+      busyBehavior: traceAndDrop
+    identity:
+      manufacturer: SIM
+      serialNumber: "10000001"
+      deviceType: ReadingDevice
+      version: 22
+    behavior:
+      mode: raw-replay
+      rawReplay:
+        emissions:
+          - id: readings
+            trigger:
+              interval: 60s
+            output:
+              gatewayTopicRef: meterReadingEvent
+              qos: 0
+              retain: false
+            stream:
+              encoding: hex
+              mode: loop
+              content: |
+                0102030405060708090a0b0c0d0e0f10
+                1112131415161718191a1b1c1d1e1f20
+
+bindings:
+  - id: binding-001
+    gateway: "gw-alpha-001"
+    device: meter-alpha-001
+    protocol: meter-radio
+    active: true
+    visibleIn:
+      - device-list
+      - backup/devices
+
+faultProfiles:
+  - id: none
+    enabled: false
+
+scenarios:
+  - id: mvp
+    gateways:
+      - "gw-alpha-001"
