@@ -64,6 +64,63 @@ def evidence():
 
 
 class KubernetesReplacementTests(unittest.TestCase):
+    def test_scale_down_retries_status_only_version_races(self):
+        kube = Kubernetes()
+        run = kube.run
+        def conflict(args, value=None):
+            if not kube.writes:
+                kube.writes.append('patch-conflict')
+                kube.objects['Deployment', 'old']['metadata']['resourceVersion'] = '2'
+                raise k.KubernetesOperationError('concurrent status update')
+            return run(args, value)
+        kube.run = conflict
+        k.scale_down(kube, 'old', kube.get('deployment', 'old'))
+        self.assertEqual(kube.writes, ['patch-conflict', 'patch'])
+        self.assertEqual(kube.get('deployment', 'old')['spec']['replicas'], 0)
+
+    def test_scale_down_does_not_adopt_workload_drift(self):
+        for changed in ['uid', 'spec']:
+            with self.subTest(changed=changed):
+                kube = Kubernetes()
+                original = kube.get('deployment', 'old')
+                def conflict(args, value=None):
+                    kube.writes.append('patch-conflict')
+                    obj = kube.objects['Deployment', 'old']
+                    obj['metadata']['resourceVersion'] = '2'
+                    if changed == 'uid':
+                        obj['metadata']['uid'] = 'replacement-uid'
+                    else:
+                        obj['spec']['replicas'] = 5
+                    raise k.KubernetesOperationError('concurrent change')
+                kube.run = conflict
+                with self.assertRaisesRegex(ValueError, 'changed during scale-down'):
+                    k.scale_down(kube, 'old', original)
+                self.assertEqual(kube.writes, ['patch-conflict'])
+
+    def test_scale_down_reconciles_a_lost_success_response(self):
+        kube = Kubernetes()
+        run = kube.run
+        def lost(args, value=None):
+            run(args, value)
+            raise k.KubernetesOperationError('response lost')
+        kube.run = lost
+        k.scale_down(kube, 'old', kube.get('deployment', 'old'))
+        self.assertEqual(kube.writes, ['patch'])
+
+    def test_scale_down_bounds_conflicts_and_does_not_retry_unrelated_errors(self):
+        for status_changes, expected in [(False, 1), (True, 3)]:
+            with self.subTest(status_changes=status_changes):
+                kube = Kubernetes()
+                def conflict(args, value=None):
+                    kube.writes.append('patch-conflict')
+                    if status_changes:
+                        kube.objects['Deployment', 'old']['metadata']['resourceVersion'] = str(len(kube.writes)+1)
+                    raise k.KubernetesOperationError('operation failed')
+                kube.run = conflict
+                with self.assertRaises(k.KubernetesOperationError):
+                    k.scale_down(kube, 'old', kube.get('deployment', 'old'))
+                self.assertEqual(len(kube.writes), expected)
+
     def test_resume_after_lost_create_response_never_reuses_or_deletes_storage(self):
         api, kube = fixture.Cluster(), Kubernetes()
         value = k.build(api, kube, 2, 4, 'lost volume', 'old', 'lost', evidence(), bundle())

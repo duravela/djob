@@ -18,6 +18,10 @@ m = r.m
 FORMAT = 'djob-kubernetes-replacement/v1'
 
 
+class KubernetesOperationError(ValueError):
+    """A failed operation; raw kubectl output may contain private material."""
+
+
 class Kubernetes:
     def __init__(self, kubeconfig, context, namespace):
         if not kubeconfig or not context or not namespace:
@@ -30,7 +34,7 @@ class Kubernetes:
         result = subprocess.run(self.prefix+args, input=None if value is None else m.canonical(value),
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
         if result.returncode:
-            raise ValueError('Kubernetes operation failed; inspect workload events and resume the retained plan')
+            raise KubernetesOperationError('Kubernetes operation failed; inspect workload events and resume the retained plan')
         return json.loads(result.stdout or b'{}')
 
     def get(self, kind, name):
@@ -133,6 +137,30 @@ def subset(expected, actual):
     return expected == actual
 
 
+def scale_down(kube, name, original):
+    """Retry status-only resourceVersion races without relaxing UID/CAS checks."""
+    uid, spec = original['metadata']['uid'], original['spec']
+    stopped = dict(spec, replicas=0)
+    for attempt in range(3):
+        patch = [{'op': 'test', 'path': '/metadata/uid', 'value': uid},
+                 {'op': 'test', 'path': '/metadata/resourceVersion', 'value': original['metadata']['resourceVersion']},
+                 {'op': 'replace', 'path': '/spec/replicas', 'value': 0}]
+        try:
+            kube.run(['patch', 'deployment', name, '--type=json', '-p', json.dumps(patch), '-o', 'json'])
+            return
+        except KubernetesOperationError:
+            current = kube.get('deployment', name)
+            if not current or current['metadata']['uid'] != uid:
+                raise ValueError('Old workload identity changed during scale-down') from None
+            if current['spec'] == stopped:
+                return  # A committed scale-down whose response was lost.
+            if current['spec'] != spec:
+                raise ValueError('Old workload specification changed during scale-down') from None
+            if attempt == 2 or current['metadata']['resourceVersion'] == original['metadata']['resourceVersion']:
+                raise
+            original = current
+
+
 def apply(api, kube, value, path, approval, timeout):
     checksum = m.digest(value)
     if value.get('format') != FORMAT or checksum != approval:
@@ -162,10 +190,7 @@ def apply(api, kube, value, path, approval, timeout):
         # External persistent physical isolation is the prerequisite; scaling
         # down alone never proves that a partitioned kubelet stopped the process.
         if original['spec'].get('replicas') != 0:
-            patch = [{'op': 'test', 'path': '/metadata/uid', 'value': value['old_deployment_uid']},
-                     {'op': 'test', 'path': '/metadata/resourceVersion', 'value': original['metadata']['resourceVersion']},
-                     {'op': 'replace', 'path': '/spec/replicas', 'value': 0}]
-            kube.run(['patch', 'deployment', value['old_deployment'], '--type=json', '-p', json.dumps(patch), '-o', 'json'])
+            scale_down(kube, value['old_deployment'], original)
         journal['isolated'] = True
         m.save(journal_path, journal)
         replacement_objects(value['objects'], kube.namespace, value['raft']['new'], value['old_pvc'])

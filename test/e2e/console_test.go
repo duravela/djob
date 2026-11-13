@@ -48,21 +48,7 @@ func testManagementConsole(t *testing.T, shared bool) {
 	transport := &http.Transport{TLSClientConfig: &tls.Config{RootCAs: ca.roots, ServerName: "console-e2e", MinVersion: tls.VersionTLS12}}
 	t.Cleanup(transport.CloseIdleConnections)
 	client := &http.Client{Transport: transport, Timeout: 15 * time.Second}
-	startConsole := func(name string) (testcontainers.Container, string) {
-		t.Helper()
-		args := []string{"--controllers", "https://member-1:8080,https://member-2:8080,https://member-3:8080", "--controller-tls-ca", "/controller-ca.pem", "--listen", "0.0.0.0:8090", "--public-url", "https://console-e2e", "--tls-cert", "/console.pem", "--tls-key", "/console-key.pem"}
-		if shared {
-			args = append(args, "--shared-sessions")
-		}
-		container, err := testcontainers.Run(h.ctx, h.image, testcontainers.WithEntrypoint("/djob-console"), testcontainers.WithCmd(args...), testcontainers.WithFiles(files...), testcontainers.WithExposedPorts("8090/tcp"), network.WithNetwork([]string{name}, h.network), testcontainers.WithWaitStrategy(wait.ForListeningPort("8090/tcp").SkipInternalCheck()))
-		h.own(container, name)
-		if err != nil {
-			t.Fatal(err)
-		}
-		endpoint, err := container.PortEndpoint(h.ctx, "8090/tcp", "https")
-		if err != nil {
-			t.Fatal(err)
-		}
+	waitConsole := func(endpoint string) {
 		// A published Docker port may accept TCP before its backend is ready
 		// for TLS. Require the actual console readiness response before tests.
 		poll(t, "console HTTPS readiness", func() (bool, error) {
@@ -81,6 +67,23 @@ func testManagementConsole(t *testing.T, shared bool) {
 			}
 			return true, nil
 		})
+	}
+	startConsole := func(name string) (testcontainers.Container, string) {
+		t.Helper()
+		args := []string{"--controllers", "https://member-1:8080,https://member-2:8080,https://member-3:8080", "--controller-tls-ca", "/controller-ca.pem", "--listen", "0.0.0.0:8090", "--public-url", "https://console-e2e", "--tls-cert", "/console.pem", "--tls-key", "/console-key.pem"}
+		if shared {
+			args = append(args, "--shared-sessions")
+		}
+		container, err := testcontainers.Run(h.ctx, h.image, testcontainers.WithEntrypoint("/djob-console"), testcontainers.WithCmd(args...), testcontainers.WithFiles(files...), testcontainers.WithExposedPorts("8090/tcp"), network.WithNetwork([]string{name}, h.network), testcontainers.WithWaitStrategy(wait.ForListeningPort("8090/tcp").SkipInternalCheck()))
+		h.own(container, name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		endpoint, err := container.PortEndpoint(h.ctx, "8090/tcp", "https")
+		if err != nil {
+			t.Fatal(err)
+		}
+		waitConsole(endpoint)
 		return container, endpoint
 	}
 	container, url := startConsole("console")
@@ -381,6 +384,7 @@ func testManagementConsole(t *testing.T, shared bool) {
 		t.Fatal(err)
 	}
 	transport.CloseIdleConnections()
+	waitConsole(url)
 	if shared {
 		call(http.MethodGet, "session", nil, 200)
 	} else {
