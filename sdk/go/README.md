@@ -41,3 +41,7 @@ Package it in a company image and enroll its identity; djob maintains instances
 from a digest-pinned image and existing Secret. `worker.LoadConfig` picks up the
 injected deployment generation and projected credentials. Ordinary externally
 operated workers require no Kubernetes dependency.
+
+SDK `v0.1.0-rc.3` is retracted: a TLS 1.3 client-certificate refusal could
+trigger a reconnect before its terminal error was observed. SDK `v0.1.0-rc.4`
+preserves the pending TLS alert during failed connection startup.

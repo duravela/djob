@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"time"
 
 	wire "github.com/duravela/djob/sdk/go/worker/protocol/v1"
 	pb "github.com/duravela/djob/sdk/go/worker/protocol/v2"
@@ -55,17 +56,36 @@ func (o *workerTLSObservation) observe(err error) {
 type workerTLSConn struct {
 	net.Conn
 	observation *workerTLSObservation
+	firstRead   sync.Once
+	readDone    chan struct{}
 }
 
 func (c *workerTLSConn) Read(p []byte) (int, error) {
 	n, err := c.Conn.Read(p)
 	c.observation.observe(err)
+	c.firstRead.Do(func() { close(c.readDone) })
 	return n, err
 }
 
 func (c *workerTLSConn) Write(p []byte) (int, error) {
 	n, err := c.Conn.Write(p)
 	c.observation.observe(err)
+	if err != nil {
+		// The HTTP/2 preface write can fail before the reader consumes a TLS
+		// 1.3 refusal. gRPC then closes the connection and loses that alert.
+		// Let the already-started reader report its first result before gRPC
+		// tears down a failed startup. Established connections never wait.
+		select {
+		case <-c.readDone:
+		default:
+			timer := time.NewTimer(100 * time.Millisecond)
+			select {
+			case <-c.readDone:
+			case <-timer.C:
+			}
+			timer.Stop()
+		}
+	}
 	return n, err
 }
 
@@ -75,7 +95,7 @@ func (c *workerCredentials) ClientHandshake(ctx context.Context, authority strin
 		c.observation.observe(err)
 	}
 	if err == nil {
-		secured = &workerTLSConn{Conn: secured, observation: c.observation}
+		secured = &workerTLSConn{Conn: secured, observation: c.observation, readDone: make(chan struct{})}
 	}
 	return secured, info, err
 }
@@ -154,10 +174,9 @@ func openWorkerRPC(parent context.Context, cfg Config) (*workerRPC, error) {
 	interrupt()
 	stop()
 	if err != nil {
-		classified := c.classify(parent, err)
 		cancel()
 		_ = conn.Close()
-		return nil, classified
+		return nil, c.classify(parent, err)
 	}
 	go c.receive()
 	return c, nil

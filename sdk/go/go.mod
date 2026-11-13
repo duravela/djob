@@ -13,3 +13,6 @@ require (
 	golang.org/x/text v0.43.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260817212433-ac3dfec99bb1 // indirect
 )
+
+// TLS 1.3 client-certificate refusals could trigger a transient reconnect.
+retract v0.1.0-rc.3

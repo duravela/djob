@@ -45,6 +45,9 @@ func testManagementConsole(t *testing.T, shared bool) {
 		}
 		files = append(files, testcontainers.ContainerFile{HostFilePath: path, ContainerFilePath: "/" + name, FileMode: 0600})
 	}
+	transport := &http.Transport{TLSClientConfig: &tls.Config{RootCAs: ca.roots, ServerName: "console-e2e", MinVersion: tls.VersionTLS12}}
+	t.Cleanup(transport.CloseIdleConnections)
+	client := &http.Client{Transport: transport, Timeout: 15 * time.Second}
 	startConsole := func(name string) (testcontainers.Container, string) {
 		t.Helper()
 		args := []string{"--controllers", "https://member-1:8080,https://member-2:8080,https://member-3:8080", "--controller-tls-ca", "/controller-ca.pem", "--listen", "0.0.0.0:8090", "--public-url", "https://console-e2e", "--tls-cert", "/console.pem", "--tls-key", "/console-key.pem"}
@@ -60,6 +63,24 @@ func testManagementConsole(t *testing.T, shared bool) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		// A published Docker port may accept TCP before its backend is ready
+		// for TLS. Require the actual console readiness response before tests.
+		poll(t, "console HTTPS readiness", func() (bool, error) {
+			request, err := http.NewRequestWithContext(h.ctx, http.MethodGet, endpoint+"/readyz", nil)
+			if err != nil {
+				return false, err
+			}
+			request.Host = "console-e2e"
+			response, err := client.Do(request)
+			if err != nil {
+				return false, err
+			}
+			_ = response.Body.Close()
+			if response.StatusCode != http.StatusOK {
+				return false, fmt.Errorf("readiness status %d", response.StatusCode)
+			}
+			return true, nil
+		})
 		return container, endpoint
 	}
 	container, url := startConsole("console")
@@ -69,9 +90,6 @@ func testManagementConsole(t *testing.T, shared bool) {
 		second, secondURL = startConsole("console-second")
 	}
 	var err error
-	transport := &http.Transport{TLSClientConfig: &tls.Config{RootCAs: ca.roots, ServerName: "console-e2e", MinVersion: tls.VersionTLS12}}
-	t.Cleanup(transport.CloseIdleConnections)
-	client := &http.Client{Transport: transport, Timeout: 15 * time.Second}
 	for path, marker := range map[string]string{"/forms.js": "export function buildCompanyMutation", "/references.js": "export class ReleaseReferences", "/recovery.js": "export function buildRecoveryMutation", "/routing.js": "export function readRoute", "/usage.js": "export class UsageInspector", "/enrollments.js": "export function enrollmentRecord"} {
 		asset, err := http.NewRequestWithContext(h.ctx, http.MethodGet, url+path, nil)
 		if err != nil {

@@ -16,7 +16,7 @@ require (
 	github.com/prometheus/common v0.62.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rs/zerolog v1.34.0
-	github.com/duravela/djob/sdk/go v0.1.0-rc.3
+	github.com/duravela/djob/sdk/go v0.1.0-rc.4
 	github.com/spf13/pflag v1.0.10
 	github.com/stretchr/testify v1.11.1
 	go.etcd.io/bbolt v1.4.3
