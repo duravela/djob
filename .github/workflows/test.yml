@@ -52,9 +52,13 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
   e2e:
-    name: Testcontainers E2E
+    name: Testcontainers E2E (${{ matrix.suite }})
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [core, kubernetes]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -71,10 +75,17 @@ jobs:
           sudo sysctl -w net.bridge.bridge-nf-call-iptables=1
       - name: Run scheduler clusters, independent workers and Diorama
         env:
+          E2E_SUITE: ${{ matrix.suite }}
           DJOB_TEST_ARTIFACT_DIR: ${{ runner.temp }}/djob-e2e-logs
           DJOB_SOAK_DURATION: 30s
-        run: ./scripts/test-e2e.sh -v
+        run: |
+          if [[ "$E2E_SUITE" == kubernetes ]]; then
+            ./scripts/test-e2e.sh -v -run '^Test(Managed|Kubernetes)'
+          else
+            ./scripts/test-e2e.sh -v -skip '^Test(Managed|Kubernetes)'
+          fi
       - name: Exercise bounded history within the controller memory budget
+        if: matrix.suite == 'core'
         env:
           DJOB_TEST_ARTIFACT_DIR: ${{ runner.temp }}/djob-history-logs
           DJOB_SOAK_DURATION: 75s
@@ -86,7 +97,7 @@ jobs:
           DJOB_SOAK_MAX_OPEN_FILES: '512'
         run: ./scripts/test-e2e.sh -v -run '^TestSimulatorSoak$' -timeout=6m
       - name: Retain simulator soak measurements
-        if: always()
+        if: ${{ always() && matrix.suite == 'core' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: simulator-soak
@@ -97,7 +108,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
       - name: Retain bounded-history measurements
-        if: always()
+        if: ${{ always() && matrix.suite == 'core' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: simulator-soak-history
@@ -107,8 +118,10 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
       - name: Install pinned vulnerability scanner
+        if: matrix.suite == 'core'
         run: go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
       - name: Scan container test dependencies including test code
+        if: matrix.suite == 'core'
         env:
           GOWORK: 'off'
         run: govulncheck -C test/e2e -test ./...
@@ -116,7 +129,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
-          name: testcontainers-e2e
+          name: testcontainers-e2e-${{ matrix.suite }}
           path: |
             ${{ runner.temp }}/djob-e2e-logs/*.log
             ${{ runner.temp }}/djob-history-logs/*.log

@@ -80,6 +80,10 @@ func startReadinessServers(t *testing.T, options ...func(*Config)) []*Server {
 		cfg.NodeID = &id
 		cfg.Raft.Peers = peers
 		cfg.APIAuth = genericCredentials()
+		// These fixtures exercise API/quorum semantics. Accelerated 100ms
+		// elections can churn during race-instrumented CI startup; retain the
+		// production heartbeat interval while keeping probe deadlines short.
+		cfg.Raft.RaftEventLoopHeartbeatInterval = 100 * time.Millisecond
 		cfg.ReadinessTimeout = 100 * time.Millisecond
 		for _, option := range options {
 			option(&cfg)
@@ -93,6 +97,29 @@ func startReadinessServers(t *testing.T, options ...func(*Config)) []*Server {
 		members = append(members, a.s)
 		t.Cleanup(func() { require.NoError(t, a.s.Close(context.Background())) })
 	}
+	// Seeing one initial leader does not establish that every member has
+	// finished campaigning. Confirm quorum reads in one common observed term.
+	require.Eventually(t, func() bool {
+		var term uint64
+		leaders := 0
+		for _, member := range members {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+			_, err := member.application.Raft.ReadBarrier(ctx)
+			cancel()
+			if err != nil {
+				return false
+			}
+			observed := member.application.Raft.LocalStatus()
+			if term != 0 && observed.Term != term {
+				return false
+			}
+			term = observed.Term
+			if observed.Leader {
+				leaders++
+			}
+		}
+		return term != 0 && leaders == 1
+	}, 10*time.Second, 10*time.Millisecond, "fixture members did not establish fresh quorum in one term")
 	return members
 }
 func TestReadinessRejectsStaleLeadershipAndBoundsOutstandingProbes(t *testing.T) {
